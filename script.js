@@ -822,19 +822,20 @@ class ActionTracker {
             }
         });
         
-        // Find best week (current week vs historical weeks)
+        // Find best week using calendar weeks
         let bestWeek = this.getWeekTotal(); // Current week
-        let bestWeekDate = new Date().toISOString().split('T')[0]; // Today
+        let bestWeekDate = this.getWeekStartDate(new Date()); // Start of current week
         
-        // Check recent 4 weeks for comparison
-        for (let weekOffset = 1; weekOffset <= 4; weekOffset++) {
-            let weekTotal = 0;
+        // Check last 8 weeks for comparison
+        for (let weekOffset = 1; weekOffset <= 8; weekOffset++) {
             const weekStartDate = new Date();
             weekStartDate.setDate(weekStartDate.getDate() - (weekOffset * 7));
+            const weekStart = this.getWeekStartDate(weekStartDate);
             
+            let weekTotal = 0;
             for (let day = 0; day < 7; day++) {
-                const checkDate = new Date(weekStartDate);
-                checkDate.setDate(weekStartDate.getDate() + day);
+                const checkDate = new Date(weekStart);
+                checkDate.setDate(weekStart.getDate() + day);
                 const dateKey = checkDate.toISOString().split('T')[0];
                 const dayData = this.data[dateKey];
                 
@@ -845,34 +846,24 @@ class ActionTracker {
             
             if (weekTotal > bestWeek) {
                 bestWeek = weekTotal;
-                bestWeekDate = weekStartDate.toISOString().split('T')[0];
+                bestWeekDate = weekStart.toISOString().split('T')[0];
             }
         }
         
-        // Find best month (current month vs last 3 months)
-        let bestMonth = this.getMonthTotal(); // Current 30 days
-        let bestMonthDate = new Date().toISOString().split('T')[0]; // Today
+        // Find best month using calendar months
+        let bestMonth = this.getCurrentMonthTotal(); // Current calendar month
+        let bestMonthDate = this.getMonthStartDate(new Date()); // Start of current month
         
-        // Check last 3 months for comparison
-        for (let monthOffset = 1; monthOffset <= 3; monthOffset++) {
-            let monthTotal = 0;
-            const monthStartDate = new Date();
-            monthStartDate.setDate(monthStartDate.getDate() - (monthOffset * 30));
-            
-            for (let day = 0; day < 30; day++) {
-                const checkDate = new Date(monthStartDate);
-                checkDate.setDate(monthStartDate.getDate() + day);
-                const dateKey = checkDate.toISOString().split('T')[0];
-                const dayData = this.data[dateKey];
-                
-                if (dayData) {
-                    monthTotal += (dayData.life || 0) + (dayData.business || 0);
-                }
-            }
+        // Check last 6 months for comparison
+        for (let monthOffset = 1; monthOffset <= 6; monthOffset++) {
+            const monthDate = new Date();
+            monthDate.setMonth(monthDate.getMonth() - monthOffset);
+            const monthStart = this.getMonthStartDate(monthDate);
+            const monthTotal = this.getCalendarMonthTotal(monthDate);
             
             if (monthTotal > bestMonth) {
                 bestMonth = monthTotal;
-                bestMonthDate = monthStartDate.toISOString().split('T')[0];
+                bestMonthDate = monthStart.toISOString().split('T')[0];
             }
         }
         
@@ -933,240 +924,30 @@ class ActionTracker {
         }
     }
 
-    renderHeatmap() {
-        const heatmapGrid = document.getElementById('heatmapGrid');
-        if (!heatmapGrid) return;
-        
-        // Clear existing heatmap
-        heatmapGrid.innerHTML = '';
-        
-        // Generate last 365 days
+    // Helper methods for proper calendar period calculations
+    getWeekStartDate(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day; // Sunday = 0
+        return new Date(d.setDate(diff));
+    }
+
+    getMonthStartDate(date) {
+        return new Date(date.getFullYear(), date.getMonth(), 1);
+    }
+
+    getCurrentMonthTotal() {
         const today = new Date();
-        const startDate = new Date(today);
-        startDate.setDate(today.getDate() - 364);
-        
-        // Create weeks array
-        const weeks = [];
-        let currentWeek = [];
-        
-        for (let i = 0; i < 365; i++) {
-            const date = new Date(startDate);
-            date.setDate(startDate.getDate() + i);
-            const dateKey = date.toISOString().split('T')[0];
-            const dayData = this.data[dateKey] || { life: 0, business: 0 };
-            const totalActions = dayData.life + dayData.business;
-            
-            // Determine activity level (0-4)
-            let level = 0;
-            if (totalActions > 0) level = 1;
-            if (totalActions >= 5) level = 2;
-            if (totalActions >= 10) level = 3;
-            if (totalActions >= 15) level = 4;
-            
-            const dayInfo = {
-                date: dateKey,
-                level: level,
-                actions: totalActions,
-                life: dayData.life,
-                business: dayData.business
-            };
-            
-            currentWeek.push(dayInfo);
-            
-            // If it's Sunday or the last day, complete the week
-            if (date.getDay() === 0 || i === 364) {
-                weeks.push([...currentWeek]);
-                currentWeek = [];
-            }
-        }
-        
-        // Create heatmap HTML
-        weeks.forEach(week => {
-            const weekDiv = document.createElement('div');
-            weekDiv.className = 'heatmap-week';
-            
-            week.forEach(day => {
-                const dayDiv = document.createElement('div');
-                dayDiv.className = 'heatmap-day';
-                dayDiv.setAttribute('data-level', day.level);
-                dayDiv.setAttribute('data-date', day.date);
-                dayDiv.setAttribute('data-actions', day.actions);
-                dayDiv.setAttribute('data-life', day.life);
-                dayDiv.setAttribute('data-business', day.business);
-                
-                // Add tooltip functionality
-                dayDiv.addEventListener('mouseenter', (e) => {
-                    const tooltip = document.getElementById('heatmapTooltip');
-                    if (tooltip) {
-                        const date = new Date(day.date);
-                        const dateStr = date.toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            month: 'short',
-                            day: 'numeric'
-                        });
-                        
-                        tooltip.querySelector('.tooltip-date').textContent = dateStr;
-                        tooltip.querySelector('.tooltip-actions').textContent =
-                            `${day.actions} actions (${day.life} life, ${day.business} business)`;
-                        
-                        tooltip.style.display = 'block';
-                        tooltip.style.left = e.pageX + 10 + 'px';
-                        tooltip.style.top = e.pageY - 10 + 'px';
-                    }
-                });
-                
-                dayDiv.addEventListener('mouseleave', () => {
-                    const tooltip = document.getElementById('heatmapTooltip');
-                    if (tooltip) {
-                        tooltip.style.display = 'none';
-                    }
-                });
-                
-                weekDiv.appendChild(dayDiv);
-            });
-            
-            heatmapGrid.appendChild(weekDiv);
-        });
+        return this.getCalendarMonthTotal(today);
     }
 
-    loadQuickTemplates() {
-        // Generate insights based on user's action history
-        const weekData = this.getWeekData();
-        const currentStreak = this.getCurrentStreak();
-        const weekTotal = this.getWeekTotal();
-        const weekLife = this.getWeekTotal('life');
-        const weekBusiness = this.getWeekTotal('business');
+    getCalendarMonthTotal(date) {
+        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
         
-        const insights = [];
-        
-        // Insight 1: Weekly performance
-        if (weekTotal > 0) {
-            const avgDaily = (weekTotal / 7).toFixed(1);
-            insights.push({
-                icon: '📊',
-                text: `You're averaging ${avgDaily} actions per day this week. ${weekTotal > 35 ? 'Excellent pace!' : weekTotal > 20 ? 'Good momentum!' : 'Room to grow!'}`
-            });
-        } else {
-            insights.push({
-                icon: '📊',
-                text: 'Start tracking your daily actions to see your progress patterns and build momentum.'
-            });
-        }
-        
-        // Insight 2: Streak motivation
-        if (currentStreak > 0) {
-            insights.push({
-                icon: '🎯',
-                text: `${currentStreak}-day streak active! ${currentStreak >= 7 ? 'You\'re on fire!' : 'Keep it going!'} Consistency builds lasting habits.`
-            });
-        } else {
-            insights.push({
-                icon: '🎯',
-                text: 'Start your streak today! Even small actions count towards building momentum.'
-            });
-        }
-        
-        // Insight 3: Balance analysis
-        if (weekLife > 0 && weekBusiness > 0) {
-            const ratio = weekLife / weekBusiness;
-            if (ratio >= 0.8 && ratio <= 1.2) {
-                insights.push({
-                    icon: '💡',
-                    text: 'Great balance between life and business actions! This holistic approach leads to sustainable growth.'
-                });
-            } else if (weekLife > weekBusiness) {
-                insights.push({
-                    icon: '💡',
-                    text: 'Strong focus on life actions this week. Consider adding some business activities for balanced growth.'
-                });
-            } else {
-                insights.push({
-                    icon: '💡',
-                    text: 'Heavy business focus this week. Don\'t forget to nurture your personal life for overall well-being.'
-                });
-            }
-        } else if (weekLife > 0) {
-            insights.push({
-                icon: '💡',
-                text: 'Great personal development focus! Consider adding business actions to accelerate your professional growth.'
-            });
-        } else if (weekBusiness > 0) {
-            insights.push({
-                icon: '💡',
-                text: 'Strong business momentum! Balance it with life actions for sustainable long-term success.'
-            });
-        } else {
-            insights.push({
-                icon: '💡',
-                text: 'Ready to start? Try setting small, achievable goals for both life and business areas.'
-            });
-        }
-        
-        // Insight 4: Motivational recommendation
-        const bestDay = Math.max(...weekData.lifeData.map((life, i) => life + weekData.businessData[i]));
-        if (bestDay > 0) {
-            insights.push({
-                icon: '⭐',
-                text: `Your best day this week had ${bestDay} actions! You've proven you can do it - aim to repeat that energy.`
-            });
-        } else {
-            insights.push({
-                icon: '⭐',
-                text: 'Every expert was once a beginner. Start with just one action today and build from there!'
-            });
-        }
-        
-        // Update insight cards
-        insights.forEach((insight, index) => {
-            const cardId = `insightCard${index + 1}`;
-            const card = document.getElementById(cardId);
-            if (card) {
-                const iconEl = card.querySelector('.insight-icon');
-                const textEl = card.querySelector('.insight-text');
-                if (iconEl) iconEl.textContent = insight.icon;
-                if (textEl) textEl.textContent = insight.text;
-            }
-        });
-    }
-// Helper methods for badge and personal best calculations
-    getTotalActions() {
         let total = 0;
-        Object.values(this.data).forEach(day => {
-            total += (day.life || 0) + (day.business || 0);
-        });
-        return total;
-    }
-
-    getTodayActions() {
-        const today = this.getTodayKey();
-        const todayData = this.data[today] || { life: 0, business: 0 };
-        return (todayData.life || 0) + (todayData.business || 0);
-    }
-
-    getTodayData() {
-        const today = this.getTodayKey();
-        return this.data[today] || { life: 0, business: 0 };
-    }
-
-    getWeeklyBalance() {
-        const weekLife = this.getWeekTotal('life');
-        const weekBusiness = this.getWeekTotal('business');
-        
-        if (weekLife === 0 && weekBusiness === 0) return false;
-        if (weekLife === 0 || weekBusiness === 0) return false;
-        
-        const ratio = weekLife / weekBusiness;
-        return ratio >= 0.7 && ratio <= 1.3; // Within 30% of each other
-    }
-
-    getMonthTotal() {
-        let total = 0;
-        const today = new Date();
-        
-        for (let i = 0; i < 30; i++) {
-            const currentDate = new Date(today);
-            currentDate.setDate(today.getDate() - i);
-            const dateKey = currentDate.toISOString().split('T')[0];
+        for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
+            const dateKey = d.toISOString().split('T')[0];
             const dayData = this.data[dateKey];
             
             if (dayData) {
@@ -1176,119 +957,6 @@ class ActionTracker {
         
         return total;
     }
-
-    formatDate(dateString) {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        
-        // For personal bests, show more detailed date information
-        const now = new Date();
-        const diffTime = Math.abs(now - date);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        // Format with month name, day, and year
-        const formattedDate = date.toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric',
-            year: 'numeric'
-        });
-        
-        // Add context about when this record was achieved
-        if (diffDays === 0) {
-            return `${formattedDate} (Today!)`;
-        } else if (diffDays === 1) {
-            return `${formattedDate} (Yesterday)`;
-        } else if (diffDays <= 7) {
-            return `${formattedDate} (${diffDays} days ago)`;
-        } else if (diffDays <= 30) {
-            const weeks = Math.floor(diffDays / 7);
-            return `${formattedDate} (${weeks} week${weeks > 1 ? 's' : ''} ago)`;
-        } else if (diffDays <= 365) {
-            const months = Math.floor(diffDays / 30);
-            return `${formattedDate} (${months} month${months > 1 ? 's' : ''} ago)`;
-        } else {
-            const years = Math.floor(diffDays / 365);
-            return `${formattedDate} (${years} year${years > 1 ? 's' : ''} ago)`;
-        }
-    }
-
-    generateWeeklyInsights() {
-        // Get weekly data
-        const weekData = this.getWeekData();
-        const weekLife = weekData.lifeData.reduce((sum, val) => sum + val, 0);
-        const weekBusiness = weekData.businessData.reduce((sum, val) => sum + val, 0);
-        const weekTotal = weekLife + weekBusiness;
-        
-        // Get day with most activity
-        let bestDay = 0;
-        let bestDayIndex = -1;
-        for (let i = 0; i < weekData.lifeData.length; i++) {
-            const dayTotal = weekData.lifeData[i] + weekData.businessData[i];
-            if (dayTotal > bestDay) {
-                bestDay = dayTotal;
-                bestDayIndex = i;
-            }
-        }
-        
-        // Calculate goal progress
-        const lifeGoalProgress = Math.round((weekLife / this.goals.weeklyLife) * 100);
-        const businessGoalProgress = Math.round((weekBusiness / this.goals.weeklyBusiness) * 100);
-        
-        // Get current streak
-        const streak = this.getCurrentStreak();
-        
-        // Generate insights object with all expected properties
-        return {
-            weekTotal: weekTotal,
-            weekLife: weekLife,
-            weekBusiness: weekBusiness,
-            bestDayMessage: bestDayIndex >= 0 ?
-                `Your most productive day was ${weekData.labels[bestDayIndex]} with ${bestDay} actions` :
-                "No actions recorded this week yet",
-            streakMessage: streak === 0 ?
-                "You don't have an active streak yet. Start today!" :
-                `You're on a ${streak}-day streak! 🔥`,
-            goalMessage: `Life actions: ${lifeGoalProgress}% of weekly goal. Business actions: ${businessGoalProgress}% of weekly goal.`,
-            suggestion: this.generateSuggestion(weekLife, weekBusiness, streak)
-        };
-    }
-
-    getCurrentStreak() {
-        let streak = 0;
-        let currentDate = new Date();
-        
-        while (true) {
-            const dateKey = currentDate.toISOString().split('T')[0];
-            const dayData = this.data[dateKey];
-            
-            if (dayData && (dayData.life > 0 || dayData.business > 0)) {
-                streak++;
-                currentDate.setDate(currentDate.getDate() - 1);
-            } else {
-                break;
-            }
-        }
-        
-        return streak;
-    }
-
-    generateSuggestion(weekLife, weekBusiness, streak) {
-        // Generate personalized suggestions based on data
-        if (weekLife === 0 && weekBusiness === 0) {
-            return "Start small with just one or two actions today to build momentum.";
-        } else if (weekLife < weekBusiness / 2) {
-            return "Consider adding more life actions for better work-life balance.";
-        } else if (weekBusiness < weekLife / 2) {
-            return "Try to focus on some business actions to maintain balance.";
-        } else if (streak === 0) {
-            return "Log actions daily to build a streak and create consistent habits.";
-        } else if (streak > 0 && streak < 7) {
-            return `Keep going! You're ${7 - streak} days away from a 7-day streak badge.`;
-        } else {
-            return "You're doing great with balanced actions. Keep up the good work!";
-        }
-    }
-
     saveEntry() {
         const lifeActions = parseInt(document.getElementById('lifeActions').value) || 0;
         const businessActions = parseInt(document.getElementById('businessActions').value) || 0;
