@@ -719,69 +719,185 @@ class ActionTracker {
     }
 
     updatePersonalBests() {
-        const currentStreak = this.getCurrentStreak();
-        const todayActions = this.getTodayActions();
-        const weekTotal = this.getWeekTotal();
-        const monthTotal = this.getMonthTotal();
-        const todayData = this.getTodayData();
-        const today = this.getTodayKey();
-        
         let updated = false;
         
-        // Update longest streak
-        if (currentStreak > this.personalBests.longestStreak) {
-            this.personalBests.longestStreak = currentStreak;
-            this.personalBests.longestStreakDate = today;
+        // Scan all historical data to find true personal bests
+        let longestStreak = 0;
+        let longestStreakDate = null;
+        let mostProductiveDay = 0;
+        let mostProductiveDayDate = null;
+        let mostLifeActions = 0;
+        let mostLifeActionsDate = null;
+        let mostBusinessActions = 0;
+        let mostBusinessActionsDate = null;
+        
+        // Find longest streak by checking all possible streak starts
+        const allDates = Object.keys(this.data).sort();
+        let currentStreak = 0;
+        let streakStartDate = null;
+        
+        for (const dateKey of allDates) {
+            const dayData = this.data[dateKey];
+            if (dayData && (dayData.life > 0 || dayData.business > 0)) {
+                if (currentStreak === 0) {
+                    streakStartDate = dateKey;
+                }
+                currentStreak++;
+                
+                // Update longest streak if current is longer
+                if (currentStreak > longestStreak) {
+                    longestStreak = currentStreak;
+                    longestStreakDate = streakStartDate;
+                }
+            } else {
+                currentStreak = 0;
+                streakStartDate = null;
+            }
+        }
+        
+        // Also check current streak from today backwards
+        const currentStreakFromToday = this.getCurrentStreak();
+        if (currentStreakFromToday > longestStreak) {
+            longestStreak = currentStreakFromToday;
+            const today = new Date();
+            today.setDate(today.getDate() - (currentStreakFromToday - 1));
+            longestStreakDate = today.toISOString().split('T')[0];
+        }
+        
+        // Find best single day, life actions, and business actions
+        Object.entries(this.data).forEach(([dateKey, dayData]) => {
+            const dayTotal = (dayData.life || 0) + (dayData.business || 0);
+            
+            // Most productive day
+            if (dayTotal > mostProductiveDay) {
+                mostProductiveDay = dayTotal;
+                mostProductiveDayDate = dateKey;
+            }
+            
+            // Most life actions
+            if ((dayData.life || 0) > mostLifeActions) {
+                mostLifeActions = dayData.life || 0;
+                mostLifeActionsDate = dateKey;
+            }
+            
+            // Most business actions
+            if ((dayData.business || 0) > mostBusinessActions) {
+                mostBusinessActions = dayData.business;
+                mostBusinessActionsDate = dateKey;
+            }
+        });
+        
+        // Find best week by checking all possible week periods
+        let bestWeek = 0;
+        let bestWeekDate = null;
+        
+        if (allDates.length > 0) {
+            const startDate = new Date(allDates[0]);
+            const endDate = new Date(allDates[allDates.length - 1]);
+            
+            // Check each possible week
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                let weekTotal = 0;
+                
+                // Calculate total for 7 days starting from this date
+                for (let i = 0; i < 7; i++) {
+                    const checkDate = new Date(d);
+                    checkDate.setDate(d.getDate() + i);
+                    const checkDateKey = checkDate.toISOString().split('T')[0];
+                    const dayData = this.data[checkDateKey];
+                    
+                    if (dayData) {
+                        weekTotal += (dayData.life || 0) + (dayData.business || 0);
+                    }
+                }
+                
+                if (weekTotal > bestWeek) {
+                    bestWeek = weekTotal;
+                    bestWeekDate = d.toISOString().split('T')[0];
+                }
+            }
+        }
+        
+        // Find best month by checking all possible month periods
+        let bestMonth = 0;
+        let bestMonthDate = null;
+        
+        if (allDates.length > 0) {
+            const startDate = new Date(allDates[0]);
+            const endDate = new Date(allDates[allDates.length - 1]);
+            
+            // Check each possible 30-day period
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                let monthTotal = 0;
+                
+                // Calculate total for 30 days starting from this date
+                for (let i = 0; i < 30; i++) {
+                    const checkDate = new Date(d);
+                    checkDate.setDate(d.getDate() + i);
+                    const checkDateKey = checkDate.toISOString().split('T')[0];
+                    const dayData = this.data[checkDateKey];
+                    
+                    if (dayData) {
+                        monthTotal += (dayData.life || 0) + (dayData.business || 0);
+                    }
+                }
+                
+                if (monthTotal > bestMonth) {
+                    bestMonth = monthTotal;
+                    bestMonthDate = d.toISOString().split('T')[0];
+                }
+            }
+        }
+        
+        // Update personal bests if new records are found
+        if (longestStreak > (this.personalBests.longestStreak || 0)) {
+            this.personalBests.longestStreak = longestStreak;
+            this.personalBests.longestStreakDate = longestStreakDate;
             updated = true;
         }
         
-        // Update most productive day
-        if (todayActions > this.personalBests.mostProductiveDay) {
-            this.personalBests.mostProductiveDay = todayActions;
-            this.personalBests.mostProductiveDayDate = today;
+        if (mostProductiveDay > (this.personalBests.mostProductiveDay || 0)) {
+            this.personalBests.mostProductiveDay = mostProductiveDay;
+            this.personalBests.mostProductiveDayDate = mostProductiveDayDate;
             updated = true;
         }
         
-        // Update best week
-        if (weekTotal > this.personalBests.bestWeek) {
-            this.personalBests.bestWeek = weekTotal;
-            this.personalBests.bestWeekDate = today;
+        if (bestWeek > (this.personalBests.bestWeek || 0)) {
+            this.personalBests.bestWeek = bestWeek;
+            this.personalBests.bestWeekDate = bestWeekDate;
             updated = true;
         }
         
-        // Update best month
-        if (monthTotal > this.personalBests.bestMonth) {
-            this.personalBests.bestMonth = monthTotal;
-            this.personalBests.bestMonthDate = today;
+        if (bestMonth > (this.personalBests.bestMonth || 0)) {
+            this.personalBests.bestMonth = bestMonth;
+            this.personalBests.bestMonthDate = bestMonthDate;
             updated = true;
         }
         
-        // Update most life actions in a day
-        if (todayData.life > this.personalBests.mostLifeActions) {
-            this.personalBests.mostLifeActions = todayData.life;
-            this.personalBests.mostLifeActionsDate = today;
+        if (mostLifeActions > (this.personalBests.mostLifeActions || 0)) {
+            this.personalBests.mostLifeActions = mostLifeActions;
+            this.personalBests.mostLifeActionsDate = mostLifeActionsDate;
             updated = true;
         }
         
-        // Update most business actions in a day
-        if (todayData.business > this.personalBests.mostBusinessActions) {
-            this.personalBests.mostBusinessActions = todayData.business;
-            this.personalBests.mostBusinessActionsDate = today;
+        if (mostBusinessActions > (this.personalBests.mostBusinessActions || 0)) {
+            this.personalBests.mostBusinessActions = mostBusinessActions;
+            this.personalBests.mostBusinessActionsDate = mostBusinessActionsDate;
             updated = true;
         }
         
-        // Update UI elements
-        this.safeUpdateElement('bestStreak', this.personalBests.longestStreak);
+        // Always update UI elements with current best values (even if not newly updated)
+        this.safeUpdateElement('bestStreak', this.personalBests.longestStreak || 0);
         this.safeUpdateElement('bestStreakDate', this.formatDate(this.personalBests.longestStreakDate));
-        this.safeUpdateElement('bestSingleDay', this.personalBests.mostProductiveDay);
+        this.safeUpdateElement('bestSingleDay', this.personalBests.mostProductiveDay || 0);
         this.safeUpdateElement('bestSingleDayDate', this.formatDate(this.personalBests.mostProductiveDayDate));
-        this.safeUpdateElement('bestWeek', this.personalBests.bestWeek);
+        this.safeUpdateElement('bestWeek', this.personalBests.bestWeek || 0);
         this.safeUpdateElement('bestWeekDate', this.formatDate(this.personalBests.bestWeekDate));
-        this.safeUpdateElement('bestMonth', this.personalBests.bestMonth);
+        this.safeUpdateElement('bestMonth', this.personalBests.bestMonth || 0);
         this.safeUpdateElement('bestMonthDate', this.formatDate(this.personalBests.bestMonthDate));
-        this.safeUpdateElement('bestLifeDay', this.personalBests.mostLifeActions);
+        this.safeUpdateElement('bestLifeDay', this.personalBests.mostLifeActions || 0);
         this.safeUpdateElement('bestLifeDayDate', this.formatDate(this.personalBests.mostLifeActionsDate));
-        this.safeUpdateElement('bestBusinessDay', this.personalBests.mostBusinessActions);
+        this.safeUpdateElement('bestBusinessDay', this.personalBests.mostBusinessActions || 0);
         this.safeUpdateElement('bestBusinessDayDate', this.formatDate(this.personalBests.mostBusinessActionsDate));
         
         // Save if updated
