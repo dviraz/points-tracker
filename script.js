@@ -1171,11 +1171,36 @@ class ActionTracker {
     formatDate(dateString) {
         if (!dateString) return '-';
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { 
+        
+        // For personal bests, show more detailed date information
+        const now = new Date();
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        // Format with month name, day, and year
+        const formattedDate = date.toLocaleDateString('en-US', { 
             month: 'short', 
             day: 'numeric',
             year: 'numeric'
         });
+        
+        // Add context about when this record was achieved
+        if (diffDays === 0) {
+            return `${formattedDate} (Today!)`;
+        } else if (diffDays === 1) {
+            return `${formattedDate} (Yesterday)`;
+        } else if (diffDays <= 7) {
+            return `${formattedDate} (${diffDays} days ago)`;
+        } else if (diffDays <= 30) {
+            const weeks = Math.floor(diffDays / 7);
+            return `${formattedDate} (${weeks} week${weeks > 1 ? 's' : ''} ago)`;
+        } else if (diffDays <= 365) {
+            const months = Math.floor(diffDays / 30);
+            return `${formattedDate} (${months} month${months > 1 ? 's' : ''} ago)`;
+        } else {
+            const years = Math.floor(diffDays / 365);
+            return `${formattedDate} (${years} year${years > 1 ? 's' : ''} ago)`;
+        }
     }
 
     generateWeeklyInsights() {
