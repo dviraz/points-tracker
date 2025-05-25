@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Action Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Daily Action Tracker</h1>
+            <div class="streak-counter">
+                <span class="streak-label">Current Streak:</span>
+                <span class="streak-number" id="streakCount">0</span>
+                <span class="streak-fire">🔥</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- Progress Rings Section -->
+            <section class="progress-rings-section">
+                <h2>🎯 Today's Progress</h2>
+                <div class="rings-container">
+                    <div class="progress-ring-wrapper">
+                        <div class="progress-ring" data-type="life">
+                            <svg class="progress-ring-svg" width="120" height="120">
+                                <circle class="progress-ring-circle-bg" cx="60" cy="60" r="50"></circle>
+                                <circle class="progress-ring-circle progress-ring-life" cx="60" cy="60" r="50" id="lifeProgressRing"></circle>
+                            </svg>
+                            <div class="progress-ring-text">
+                                <span class="progress-ring-value" id="lifeRingValue">0</span>
+                                <span class="progress-ring-label">Life</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="progress-ring-wrapper">
+                        <div class="progress-ring" data-type="business">
+                            <svg class="progress-ring-svg" width="120" height="120">
+                                <circle class="progress-ring-circle-bg" cx="60" cy="60" r="50"></circle>
+                                <circle class="progress-ring-circle progress-ring-business" cx="60" cy="60" r="50" id="businessProgressRing"></circle>
+                            </svg>
+                            <div class="progress-ring-text">
+                                <span class="progress-ring-value" id="businessRingValue">0</span>
+                                <span class="progress-ring-label">Business</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="progress-ring-wrapper">
+                        <div class="progress-ring" data-type="total">
+                            <svg class="progress-ring-svg" width="120" height="120">
+                                <circle class="progress-ring-circle-bg" cx="60" cy="60" r="50"></circle>
+                                <circle class="progress-ring-circle progress-ring-total" cx="60" cy="60" r="50" id="totalProgressRing"></circle>
+                            </svg>
+                            <div class="progress-ring-text">
+                                <span class="progress-ring-value" id="totalRingValue">0</span>
+                                <span class="progress-ring-label">Total</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Daily Input Section -->
+            <section class="input-section">
+                <h2>Today's Actions</h2>
+                <div class="date-display" id="currentDate"></div>
+                
+                <div class="input-form">
+                    <div class="action-input">
+                        <label for="lifeActions">
+                            <span class="emoji">🏠</span>
+                            Life Actions
+                        </label>
+                        <div class="input-group">
+                            <input type="number" id="lifeActions" min="0" max="100" placeholder="0">
+                            <div class="input-controls">
+                                <div class="quick-buttons">
+                                    <button onclick="setQuickValue('lifeActions', 1)">1</button>
+                                    <button onclick="setQuickValue('lifeActions', 3)">3</button>
+                                    <button onclick="setQuickValue('lifeActions', 5)">5</button>
+                                    <button onclick="setQuickValue('lifeActions', 10)">10</button>
+                                </div>
+                                <button class="reset-btn" onclick="resetField('lifeActions')" title="Reset to 0">
+                                    🔄 Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-input">
+                        <label for="businessActions">
+                            <span class="emoji">💼</span>
+                            Business Actions
+                        </label>
+                        <div class="input-group">
+                            <input type="number" id="businessActions" min="0" max="100" placeholder="0">
+                            <div class="input-controls">
+                                <div class="quick-buttons">
+                                    <button onclick="setQuickValue('businessActions', 1)">1</button>
+                                    <button onclick="setQuickValue('businessActions', 3)">3</button>
+                                    <button onclick="setQuickValue('businessActions', 5)">5</button>
+                                    <button onclick="setQuickValue('businessActions', 10)">10</button>
+                                </div>
+                                <button class="reset-btn" onclick="resetField('businessActions')" title="Reset to 0">
+                                    🔄 Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="save-btn" onclick="saveEntry()">
+                        <span class="save-icon">💾</span>
+                        Save Today's Actions
+                    </button>
+                </div>
+
+                <div class="today-summary" id="todaySummary" style="display: none;">
+                    <h3>✅ Today's Entry Saved!</h3>
+                    <div class="summary-stats">
+                        <span class="stat">
+                            <span class="emoji">🏠</span>
+                            <span id="todayLife">0</span> Life Actions
+                        </span>
+                        <span class="stat">
+                            <span class="emoji">💼</span>
+                            <span id="todayBusiness">0</span> Business Actions
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Achievement Badges Section -->
+            <section class="achievements-section">
+                <h2>🏆 Achievement Badges</h2>
+                <div class="badges-container">
+                    <div class="badge-category">
+                        <h3>🔥 Streak Achievements</h3>
+                        <div class="badges-grid">
+                            <div class="badge" data-achievement="first-day" id="badge-first-day">
+                                <div class="badge-icon">🎯</div>
+                                <div class="badge-title">First Day</div>
+                                <div class="badge-desc">Complete your first day</div>
+                            </div>
+                            <div class="badge" data-achievement="week-streak" id="badge-week-streak">
+                                <div class="badge-icon">📅</div>
+                                <div class="badge-title">Week Warrior</div>
+                                <div class="badge-desc">7-day streak</div>
+                            </div>
+                            <div class="badge" data-achievement="month-streak" id="badge-month-streak">
+                                <div class="badge-icon">🗓️</div>
+                                <div class="badge-title">Month Master</div>
+                                <div class="badge-desc">30-day streak</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="badge-category">
+                        <h3>📊 Action Achievements</h3>
+                        <div class="badges-grid">
+                            <div class="badge" data-achievement="hundred-actions" id="badge-hundred-actions">
+                                <div class="badge-icon">💯</div>
+                                <div class="badge-title">Century Club</div>
+                                <div class="badge-desc">100 total actions</div>
+                            </div>
+                            <div class="badge" data-achievement="big-day" id="badge-big-day">
+                                <div class="badge-icon">🚀</div>
+                                <div class="badge-title">Big Day</div>
+                                <div class="badge-desc">20+ actions in one day</div>
+                            </div>
+                            <div class="badge" data-achievement="consistency" id="badge-consistency">
+                                <div class="badge-icon">⚖️</div>
+                                <div class="badge-title">Balanced Life</div>
+                                <div class="badge-desc">Equal life/business actions</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Personal Bests Dashboard -->
+            <section class="personal-bests-section">
+                <h2>🏆 Personal Bests & Records</h2>
+                <div class="bests-container">
+                    <div class="best-card">
+                        <div class="best-icon">🔥</div>
+                        <div class="best-title">Longest Streak</div>
+                        <div class="best-value" id="bestStreak">0</div>
+                        <div class="best-label">days</div>
+                        <div class="best-date" id="bestStreakDate">-</div>
+                    </div>
+                    <div class="best-card">
+                        <div class="best-icon">🚀</div>
+                        <div class="best-title">Most Productive Day</div>
+                        <div class="best-value" id="bestSingleDay">0</div>
+                        <div class="best-label">actions</div>
+                        <div class="best-date" id="bestSingleDayDate">-</div>
+                    </div>
+                    <div class="best-card">
+                        <div class="best-icon">📅</div>
+                        <div class="best-title">Best Week</div>
+                        <div class="best-value" id="bestWeek">0</div>
+                        <div class="best-label">actions</div>
+                        <div class="best-date" id="bestWeekDate">-</div>
+                    </div>
+                    <div class="best-card">
+                        <div class="best-icon">🗓️</div>
+                        <div class="best-title">Best Month</div>
+                        <div class="best-value" id="bestMonth">0</div>
+                        <div class="best-label">actions</div>
+                        <div class="best-date" id="bestMonthDate">-</div>
+                    </div>
+                    <div class="best-card">
+                        <div class="best-icon">🏠</div>
+                        <div class="best-title">Most Life Actions</div>
+                        <div class="best-value" id="bestLifeDay">0</div>
+                        <div class="best-label">in one day</div>
+                        <div class="best-date" id="bestLifeDayDate">-</div>
+                    </div>
+                    <div class="best-card">
+                        <div class="best-icon">💼</div>
+                        <div class="best-title">Most Business Actions</div>
+                        <div class="best-value" id="bestBusinessDay">0</div>
+                        <div class="best-label">in one day</div>
+                        <div class="best-date" id="bestBusinessDayDate">-</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Heatmap Calendar -->
+            <section class="heatmap-section">
+                <h2>📅 Activity Heatmap</h2>
+                <div class="heatmap-container">
+                    <div class="heatmap-legend">
+                        <span class="legend-label">Less</span>
+                        <div class="legend-squares">
+                            <div class="legend-square" data-level="0"></div>
+                            <div class="legend-square" data-level="1"></div>
+                            <div class="legend-square" data-level="2"></div>
+                            <div class="legend-square" data-level="3"></div>
+                            <div class="legend-square" data-level="4"></div>
+                        </div>
+                        <span class="legend-label">More</span>
+                    </div>
+                    <div class="heatmap-grid" id="heatmapGrid">
+                        <!-- Dynamically generated heatmap squares -->
+                    </div>
+                    <div class="heatmap-tooltip" id="heatmapTooltip" style="display: none;">
+                        <div class="tooltip-date"></div>
+                        <div class="tooltip-actions"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Weekly Insights -->
+            <section class="insights-section">
+                <h2>🧠 Weekly Insights</h2>
+                <div class="insights-container">
+                    <div class="insight-card" id="insightCard1">
+                        <div class="insight-icon">📊</div>
+                        <div class="insight-text">Analyzing your patterns...</div>
+                    </div>
+                    <div class="insight-card" id="insightCard2">
+                        <div class="insight-icon">🎯</div>
+                        <div class="insight-text">Loading insights...</div>
+                    </div>
+                    <div class="insight-card" id="insightCard3">
+                        <div class="insight-icon">💡</div>
+                        <div class="insight-text">Calculating trends...</div>
+                    </div>
+                    <div class="insight-card" id="insightCard4">
+                        <div class="insight-icon">⭐</div>
+                        <div class="insight-text">Preparing recommendations...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="charts-section">
+                <h2>📊 Your Progress</h2>
+                
+                <div class="chart-container">
+                    <h3>Last 7 Days</h3>
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h3>Monthly Overview</h3>
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h4>Total This Week</h4>
+                        <div class="stat-value" id="weekTotal">0</div>
+                        <div class="stat-label">Combined Actions</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Average per Day</h4>
+                        <div class="stat-value" id="dailyAverage">0</div>
+                        <div class="stat-label">This Month</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Best Day</h4>
+                        <div class="stat-value" id="bestDay">0</div>
+                        <div class="stat-label">Actions</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Goals Section -->
+            <section class="goals-section">
+                <h2>🎯 Goals & Progress</h2>
+                
+                <!-- Goal Settings -->
+                <div class="goal-settings">
+                    <h3>⚙️ Customize Your Goals</h3>
+                    <div class="goal-inputs">
+                        <div class="goal-input-group">
+                            <label for="weeklyLifeGoal">Weekly Life Actions Goal:</label>
+                            <input type="number" id="weeklyLifeGoal" min="1" max="200" value="20">
+                        </div>
+                        <div class="goal-input-group">
+                            <label for="weeklyBusinessGoal">Weekly Business Actions Goal:</label>
+                            <input type="number" id="weeklyBusinessGoal" min="1" max="200" value="15">
+                        </div>
+                        <div class="goal-input-group">
+                            <label for="monthlyLifeGoal">Monthly Life Actions Goal:</label>
+                            <input type="number" id="monthlyLifeGoal" min="1" max="500" value="80">
+                        </div>
+                        <div class="goal-input-group">
+                            <label for="monthlyBusinessGoal">Monthly Business Actions Goal:</label>
+                            <input type="number" id="monthlyBusinessGoal" min="1" max="500" value="60">
+                        </div>
+                    </div>
+                    <button class="update-goals-btn" onclick="updateGoals()">
+                        <span class="goal-icon">🎯</span>
+                        Update Goals
+                    </button>
+                </div>
+
+                <!-- Current Progress -->
+                <div class="goal-progress">
+                    <h3>📈 Weekly Progress</h3>
+                    <div class="goal-item">
+                        <label>Life Actions Goal:</label>
+                        <div class="goal-bar">
+                            <div class="goal-progress-bar" id="lifeGoalProgress"></div>
+                        </div>
+                        <span class="goal-text" id="lifeGoalText">0 / 20</span>
+                    </div>
+                    <div class="goal-item">
+                        <label>Business Actions Goal:</label>
+                        <div class="goal-bar">
+                            <div class="goal-progress-bar" id="businessGoalProgress"></div>
+                        </div>
+                        <span class="goal-text" id="businessGoalText">0 / 15</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reports Section -->
+            <section class="reports-section">
+                <h2>📈 Weekly & Monthly Reports</h2>
+                
+                <!-- Weekly Report -->
+                <div class="report-container">
+                    <h3>📅 Weekly Report</h3>
+                    <div class="report-period" id="weeklyPeriod">Loading...</div>
+                    
+                    <div class="report-grid">
+                        <div class="report-card highlight">
+                            <div class="report-icon">🎯</div>
+                            <div class="report-value" id="weeklyTotalActions">0</div>
+                            <div class="report-label">Total Actions</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">🏠</div>
+                            <div class="report-value" id="weeklyLifeActions">0</div>
+                            <div class="report-label">Life Actions</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">💼</div>
+                            <div class="report-value" id="weeklyBusinessActions">0</div>
+                            <div class="report-label">Business Actions</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">📊</div>
+                            <div class="report-value" id="weeklyAverage">0</div>
+                            <div class="report-label">Daily Average</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">✅</div>
+                            <div class="report-value" id="weeklyActiveDays">0</div>
+                            <div class="report-label">Active Days</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">🏆</div>
+                            <div class="report-value" id="weeklyBestDay">0</div>
+                            <div class="report-label">Best Day</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">📅</div>
+                            <div class="report-value" id="weeklyBestDayDate">-</div>
+                            <div class="report-label">Best Day Date</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">🎭</div>
+                            <div class="report-value" id="weeklyConsistency">0%</div>
+                            <div class="report-label">Consistency</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Report -->
+                <div class="report-container">
+                    <h3>📆 Monthly Report</h3>
+                    <div class="report-period" id="monthlyPeriod">Loading...</div>
+                    
+                    <div class="report-grid">
+                        <div class="report-card highlight">
+                            <div class="report-icon">🎯</div>
+                            <div class="report-value" id="monthlyTotalActions">0</div>
+                            <div class="report-label">Total Actions</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">🏠</div>
+                            <div class="report-value" id="monthlyLifeActions">0</div>
+                            <div class="report-label">Life Actions</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">💼</div>
+                            <div class="report-value" id="monthlyBusinessActions">0</div>
+                            <div class="report-label">Business Actions</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">📊</div>
+                            <div class="report-value" id="monthlyAverage">0</div>
+                            <div class="report-label">Daily Average</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">✅</div>
+                            <div class="report-value" id="monthlyActiveDays">0</div>
+                            <div class="report-label">Active Days</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">🏆</div>
+                            <div class="report-value" id="monthlyBestDay">0</div>
+                            <div class="report-label">Best Day</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">📅</div>
+                            <div class="report-value" id="monthlyBestDayDate">-</div>
+                            <div class="report-label">Best Day Date</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">🎭</div>
+                            <div class="report-value" id="monthlyConsistency">0%</div>
+                            <div class="report-label">Consistency</div>
+                        </div>
+                        
+                        <div class="report-card">
+                            <div class="report-icon">🔥</div>
+                            <div class="report-value" id="monthlyStreak">0</div>
+                            <div class="report-label">Current Streak</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- Celebration Modal -->
+            <div class="modal" id="celebrationModal">
+                <div class="modal-content">
+                    <h2>🎉 Awesome!</h2>
+                    <p id="celebrationMessage"></p>
+                    <button onclick="closeCelebration()">Keep Going! 💪</button>
+                </div>
+            </div>
+
+            <!-- Edit Day Modal -->
+            <div class="modal" id="editDayModal">
+                <div class="modal-content edit-modal">
+                    <div class="modal-header">
+                        <h2>📝 Edit Day</h2>
+                        <span class="close-btn" onclick="closeEditModal()">&times;</span>
+                    </div>
+                    <div class="edit-form">
+                        <!-- Date display -->
+                        <div class="edit-date-display" id="editDateDisplay"></div>
+                        
+                        <!-- Life Actions Input -->
+                        <div class="action-input">
+                            <label for="editLifeActions">
+                                <span class="emoji">🏠</span>
+                                Life Actions
+                            </label>
+                            <div class="input-group">
+                                <input type="number" id="editLifeActions" min="0" max="100" placeholder="0">
+                                <div class="input-controls">
+                                    <div class="quick-buttons">
+                                        <button onclick="setEditQuickValue('editLifeActions', 1)">1</button>
+                                        <button onclick="setEditQuickValue('editLifeActions', 3)">3</button>
+                                        <button onclick="setEditQuickValue('editLifeActions', 5)">5</button>
+                                        <button onclick="setEditQuickValue('editLifeActions', 10)">10</button>
+                                    </div>
+                                    <button class="reset-btn" onclick="resetEditField('editLifeActions')" title="Reset to 0">
+                                        🔄 Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Business Actions Input -->
+                        <div class="action-input">
+                            <label for="editBusinessActions">
+                                <span class="emoji">💼</span>
+                                Business Actions
+                            </label>
+                            <div class="input-group">
+                                <input type="number" id="editBusinessActions" min="0" max="100" placeholder="0">
+                                <div class="input-controls">
+                                    <div class="quick-buttons">
+                                        <button onclick="setEditQuickValue('editBusinessActions', 1)">1</button>
+                                        <button onclick="setEditQuickValue('editBusinessActions', 3)">3</button>
+                                        <button onclick="setEditQuickValue('editBusinessActions', 5)">5</button>
+                                        <button onclick="setEditQuickValue('editBusinessActions', 10)">10</button>
+                                    </div>
+                                    <button class="reset-btn" onclick="resetEditField('editBusinessActions')" title="Reset to 0">
+                                        🔄 Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="edit-actions">
+                            <button class="save-edit-btn" onclick="saveEditedDay()">
+                                <span class="save-icon">💾</span>
+                                Save Changes
+                            </button>
+                            <button class="cancel-edit-btn" onclick="closeEditModal()">
+                                <span class="cancel-icon">❌</span>
+                                Cancel
+                            </button>
+                            <button class="delete-day-btn" onclick="deleteDay()">
+                                <span class="delete-icon">🗑️</span>
+                                Delete Entry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

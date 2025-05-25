@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Edit Modal - Daily Action Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Test Edit Modal</h1>
+        </header>
+
+        <main>
+            <!-- Test Buttons -->
+            <section class="input-section">
+                <h2>Test Edit Functionality</h2>
+                
+                <button onclick="addTestData()" style="background: linear-gradient(45deg, #667eea, #764ba2); color: white; border: none; padding: 15px 30px; border-radius: 25px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin: 10px;">
+                    Add Test Data
+                </button>
+                
+                <button onclick="testEditModal()" style="background: linear-gradient(45deg, #48bb78, #38a169); color: white; border: none; padding: 15px 30px; border-radius: 25px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin: 10px;">
+                    Open Edit Modal for Today
+                </button>
+                
+                <button onclick="clearAllData()" style="background: linear-gradient(45deg, #e53e3e, #c53030); color: white; border: none; padding: 15px 30px; border-radius: 25px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin: 10px;">
+                    Clear All Data
+                </button>
+                
+                <div id="testResults" style="margin-top: 20px; padding: 15px; background: #f7fafc; border-radius: 10px; display: none;">
+                    <h3>Test Results:</h3>
+                    <div id="testOutput"></div>
+                </div>
+            </section>
+
+            <!-- Celebration Modal -->
+            <div class="modal" id="celebrationModal">
+                <div class="modal-content">
+                    <h2>🎉 Awesome!</h2>
+                    <p id="celebrationMessage"></p>
+                    <button onclick="closeCelebration()">Keep Going! 💪</button>
+                </div>
+            </div>
+
+            <!-- Edit Day Modal -->
+            <div class="modal" id="editDayModal">
+                <div class="modal-content edit-modal">
+                    <div class="modal-header">
+                        <h2>📝 Edit Day</h2>
+                        <span class="close-btn" onclick="closeEditModal()">&times;</span>
+                    </div>
+                    <div class="edit-form">
+                        <!-- Date display -->
+                        <div class="edit-date-display" id="editDateDisplay"></div>
+                        
+                        <!-- Life Actions Input -->
+                        <div class="action-input">
+                            <label for="editLifeActions">
+                                <span class="emoji">🏠</span>
+                                Life Actions
+                            </label>
+                            <div class="input-group">
+                                <input type="number" id="editLifeActions" min="0" max="100" placeholder="0">
+                                <div class="input-controls">
+                                    <div class="quick-buttons">
+                                        <button onclick="setEditQuickValue('editLifeActions', 1)">1</button>
+                                        <button onclick="setEditQuickValue('editLifeActions', 3)">3</button>
+                                        <button onclick="setEditQuickValue('editLifeActions', 5)">5</button>
+                                        <button onclick="setEditQuickValue('editLifeActions', 10)">10</button>
+                                    </div>
+                                    <button class="reset-btn" onclick="resetEditField('editLifeActions')" title="Reset to 0">
+                                        🔄 Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Business Actions Input -->
+                        <div class="action-input">
+                            <label for="editBusinessActions">
+                                <span class="emoji">💼</span>
+                                Business Actions
+                            </label>
+                            <div class="input-group">
+                                <input type="number" id="editBusinessActions" min="0" max="100" placeholder="0">
+                                <div class="input-controls">
+                                    <div class="quick-buttons">
+                                        <button onclick="setEditQuickValue('editBusinessActions', 1)">1</button>
+                                        <button onclick="setEditQuickValue('editBusinessActions', 3)">3</button>
+                                        <button onclick="setEditQuickValue('editBusinessActions', 5)">5</button>
+                                        <button onclick="setEditQuickValue('editBusinessActions', 10)">10</button>
+                                    </div>
+                                    <button class="reset-btn" onclick="resetEditField('editBusinessActions')" title="Reset to 0">
+                                        🔄 Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="edit-actions">
+                            <button class="save-edit-btn" onclick="saveEditedDay()">
+                                <span class="save-icon">💾</span>
+                                Save Changes
+                            </button>
+                            <button class="cancel-edit-btn" onclick="closeEditModal()">
+                                <span class="cancel-icon">❌</span>
+                                Cancel
+                            </button>
+                            <button class="delete-day-btn" onclick="deleteDay()">
+                                <span class="delete-icon">🗑️</span>
+                                Delete Entry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Test functions
+        function addTestData() {
+            if (window.tracker) {
+                const today = new Date().toISOString().split('T')[0];
+                tracker.data[today] = {
+                    life: 5,
+                    business: 3,
+                    timestamp: new Date().toISOString()
+                };
+                tracker.saveData();
+                showTestResult("✅ Test data added: 5 life actions, 3 business actions for today");
+            }
+        }
+
+        function testEditModal() {
+            if (window.tracker) {
+                const today = new Date().toISOString().split('T')[0];
+                tracker.openEditModal(today);
+                showTestResult("✅ Edit modal opened for today: " + today);
+            }
+        }
+
+        function clearAllData() {
+            if (window.tracker && confirm('Clear all data?')) {
+                tracker.data = {};
+                tracker.saveData();
+                showTestResult("✅ All data cleared");
+            }
+        }
+
+        function showTestResult(message) {
+            const results = document.getElementById('testResults');
+            const output = document.getElementById('testOutput');
+            if (results && output) {
+                output.innerHTML += '<div style="margin: 5px 0; padding: 10px; background: white; border-radius: 5px;">' + message + '</div>';
+                results.style.display = 'block';
+            }
+        }
+
+        // Test the save functionality
+        function testSaveFunction() {
+            if (window.tracker) {
+                // Set some test values
+                document.getElementById('editLifeActions').value = 7;
+                document.getElementById('editBusinessActions').value = 4;
+                
+                // Try to save
+                tracker.saveEditedDay();
+                showTestResult("✅ Save function called with Life: 7, Business: 4");
+            }
+        }
+
+        // Add a test button for save functionality
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (window.tracker) {
+                    showTestResult("✅ ActionTracker loaded successfully");
+                } else {
+                    showTestResult("❌ ActionTracker not found");
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

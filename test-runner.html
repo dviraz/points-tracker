@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Action Tracker - Test Runner</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9fafb;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #4a5568, #2d3748);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        h2 {
+            margin-top: 30px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            font-size: 22px;
+        }
+        .btn {
+            background: linear-gradient(45deg, #48bb78, #38a169);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 10px 5px;
+        }
+        .btn.copy {
+            background: linear-gradient(45deg, #4299e1, #3182ce);
+        }
+        .btn.copy:hover {
+            background: linear-gradient(45deg, #3182ce, #2c5282);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        #testOutput {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+        }
+        .summary {
+            background: #ebf8ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #4299e1;
+        }
+        .pass {
+            color: #38a169;
+            font-weight: bold;
+        }
+        .fail {
+            color: #e53e3e;
+            font-weight: bold;
+        }
+        .emoji {
+            font-size: 20px;
+            margin-right: 8px;
+        }
+        #errorBox {
+            background: #fff5f5;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #e53e3e;
+            white-space: pre-wrap;
+            font-family: monospace;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🧪 Daily Action Tracker - Test Runner</h1>
+        <p>Test runner for ADHD-friendly Daily Action Tracker webapp</p>
+    </header>
+
+    <div id="errorBox"></div>
+    
+    <div class="controls">
+        <button id="runTests" class="btn">Run All Tests</button>
+        <button id="copyOutput" class="btn copy">📋 Copy Output</button>
+        <button id="clearOutput" class="btn">Clear Output</button>
+    </div>
+
+    <h2>Test Output</h2>
+    <div id="testOutput">Test results will appear here...</div>
+
+    <div id="summary" class="summary" style="display:none;">
+        <h3>Test Summary</h3>
+        <p>Total Tests: <span id="totalTests">0</span></p>
+        <p>Passed: <span id="passedTests" class="pass">0</span></p>
+        <p>Failed: <span id="failedTests" class="fail">0</span></p>
+    </div>
+
+    <!-- Error handling setup -->
+    <script>
+        // Capture and display any errors that occur
+        window.onerror = function(message, source, lineno, colno, error) {
+            const errorBox = document.getElementById('errorBox');
+            errorBox.style.display = 'block';
+            errorBox.innerHTML = `<strong>🚨 Error Loading:</strong> ${message}<br>
+                                 Source: ${source}<br>
+                                 Line: ${lineno}, Column: ${colno}<br>
+                                 ${error ? error.stack : ''}`;
+            return false;
+        };
+        
+        console.log("Test runner initialized: " + new Date());
+    </script>
+
+    <!-- Try loading scripts with error handling -->
+    <script>
+        // Helper function to load script with error handling
+        function loadScriptWithErrorHandling(src, onSuccess, onError) {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = onSuccess;
+            script.onerror = function() {
+                const errorBox = document.getElementById('errorBox');
+                errorBox.style.display = 'block';
+                errorBox.innerHTML += `<br>Failed to load script: ${src}`;
+                if (onError) onError();
+            };
+            document.body.appendChild(script);
+        }
+
+        // Load scripts in sequence
+        loadScriptWithErrorHandling('script.js', function() {
+            console.log('Main script.js loaded successfully');
+            
+            // Now load the test script
+            loadScriptWithErrorHandling('test.js', function() {
+                console.log('Test script loaded successfully');
+                
+                // Setup test runner after scripts are loaded
+                setupTestRunner();
+            });
+        });
+    </script>
+
+    <!-- Setup test runner functionality -->
+    <script>
+        function setupTestRunner() {
+            // Setup custom console to capture output
+            const testOutput = document.getElementById('testOutput');
+            const originalConsole = {
+                log: console.log,
+                error: console.error,
+                warn: console.warn
+            };
+
+            // Override console functions to output to the testOutput div
+            console.log = function(message) {
+                originalConsole.log(message);
+                appendToOutput(message, 'log');
+            };
+
+            console.error = function(message) {
+                originalConsole.error(message);
+                appendToOutput(message, 'error');
+            };
+
+            console.warn = function(message) {
+                originalConsole.warn(message);
+                appendToOutput(message, 'warn');
+            };
+
+            function appendToOutput(message, type) {
+                const line = document.createElement('div');
+                if (typeof message === 'object') {
+                    message = JSON.stringify(message, null, 2);
+                }
+                
+                // Add emoji and style based on message content
+                if (message.includes('PASS:')) {
+                    line.innerHTML = `<span class="emoji">✅</span><span class="pass">${message}</span>`;
+                } else if (message.includes('FAIL:')) {
+                    line.innerHTML = `<span class="emoji">❌</span><span class="fail">${message}</span>`;
+                } else if (message.includes('TESTING')) {
+                    line.innerHTML = `<strong>${message}</strong>`;
+                    // Add some space before test section headers
+                    const spacer = document.createElement('div');
+                    spacer.style.height = '10px';
+                    testOutput.appendChild(spacer);
+                } else {
+                    line.textContent = message;
+                }
+                
+                testOutput.appendChild(line);
+                testOutput.scrollTop = testOutput.scrollHeight; // Auto-scroll to bottom
+            }
+
+            // Setup button handlers
+            document.getElementById('runTests').addEventListener('click', function() {
+                testOutput.innerHTML = ''; // Clear existing output
+                document.getElementById('summary').style.display = 'none';
+                
+                appendToOutput('Starting test run...', 'log');
+                
+                // Run tests with a slight delay to allow UI to update
+                setTimeout(() => {
+                    try {
+                        appendToOutput('Creating global object...', 'log');
+                        // Create a global object for ActionTracker testing
+                        window.global = window;
+                        
+                        appendToOutput('Creating tester instance...', 'log');
+                        // Run the tests
+                        const tester = new ActionTrackerTester();
+                        appendToOutput('Running tests...', 'log');
+                        const results = tester.runTests();
+                        
+                        // Update summary
+                        document.getElementById('totalTests').textContent = tester.testResults.total;
+                        document.getElementById('passedTests').textContent = tester.testResults.passed;
+                        document.getElementById('failedTests').textContent = tester.testResults.failed;
+                        document.getElementById('summary').style.display = 'block';
+                    } catch (error) {
+                        console.error('Test Error: ' + error.message);
+                        console.error(error.stack);
+                        
+                        const errorBox = document.getElementById('errorBox');
+                        errorBox.style.display = 'block';
+                        errorBox.innerHTML += `<br><strong>Error running tests:</strong><br>${error.stack}`;
+                    }
+                }, 100);
+            });
+
+            document.getElementById('copyOutput').addEventListener('click', function() {
+                const output = testOutput.innerText;
+                
+                // Try modern clipboard API first
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(output).then(function() {
+                        console.log('Output copied to clipboard');
+                        appendToOutput('✅ Output copied to clipboard!', 'log');
+                    }, function(err) {
+                        console.error('Error copying output: ', err);
+                        // Fallback to legacy method
+                        fallbackCopyTextToClipboard(output);
+                    });
+                } else {
+                    // Use fallback method for older browsers or non-secure contexts
+                    fallbackCopyTextToClipboard(output);
+                }
+            });
+
+            // Fallback copy method for older browsers or non-secure contexts
+            function fallbackCopyTextToClipboard(text) {
+                try {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    
+                    // Avoid scrolling to bottom
+                    textArea.style.top = "0";
+                    textArea.style.left = "0";
+                    textArea.style.position = "fixed";
+                    textArea.style.opacity = "0";
+                    
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    if (successful) {
+                        console.log('Output copied to clipboard (fallback method)');
+                        appendToOutput('✅ Output copied to clipboard!', 'log');
+                    } else {
+                        throw new Error('Copy command failed');
+                    }
+                } catch (err) {
+                    console.error('Fallback copy failed: ', err);
+                    appendToOutput('❌ Failed to copy output. Try selecting the text manually and using Ctrl+C', 'log');
+                    
+                    // As a last resort, select all text in the output area
+                    const range = document.createRange();
+                    range.selectNodeContents(testOutput);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    appendToOutput('💡 Text has been selected for you - use Ctrl+C to copy', 'log');
+                }
+            }
+
+            document.getElementById('clearOutput').addEventListener('click', function() {
+                testOutput.innerHTML = 'Test results will appear here...';
+                document.getElementById('summary').style.display = 'none';
+                document.getElementById('errorBox').style.display = 'none';
+            });
+            
+            appendToOutput('Test runner setup complete! Click "Run All Tests" to start testing.', 'log');
+        }
+    </script>
+</body>
+</html>

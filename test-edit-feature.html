@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Edit Feature - Daily Action Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Daily Action Tracker - Edit Feature Test</h1>
+            <div class="streak-counter">
+                <span class="streak-label">Current Streak:</span>
+                <span class="streak-number" id="streakCount">0</span>
+                <span class="streak-fire">🔥</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- Daily Input Section -->
+            <section class="input-section">
+                <h2>Today's Actions</h2>
+                <div class="date-display" id="currentDate"></div>
+                
+                <div class="input-form">
+                    <div class="action-input">
+                        <label for="lifeActions">
+                            <span class="emoji">🏠</span>
+                            Life Actions
+                        </label>
+                        <div class="input-group">
+                            <input type="number" id="lifeActions" min="0" max="100" placeholder="0">
+                            <div class="input-controls">
+                                <div class="quick-buttons">
+                                    <button onclick="setQuickValue('lifeActions', 1)">1</button>
+                                    <button onclick="setQuickValue('lifeActions', 3)">3</button>
+                                    <button onclick="setQuickValue('lifeActions', 5)">5</button>
+                                    <button onclick="setQuickValue('lifeActions', 10)">10</button>
+                                </div>
+                                <button class="reset-btn" onclick="resetField('lifeActions')" title="Reset to 0">
+                                    🔄 Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-input">
+                        <label for="businessActions">
+                            <span class="emoji">💼</span>
+                            Business Actions
+                        </label>
+                        <div class="input-group">
+                            <input type="number" id="businessActions" min="0" max="100" placeholder="0">
+                            <div class="input-controls">
+                                <div class="quick-buttons">
+                                    <button onclick="setQuickValue('businessActions', 1)">1</button>
+                                    <button onclick="setQuickValue('businessActions', 3)">3</button>
+                                    <button onclick="setQuickValue('businessActions', 5)">5</button>
+                                    <button onclick="setQuickValue('businessActions', 10)">10</button>
+                                </div>
+                                <button class="reset-btn" onclick="resetField('businessActions')" title="Reset to 0">
+                                    🔄 Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="save-btn" onclick="saveEntry()">
+                        <span class="save-icon">💾</span>
+                        Save Today's Actions
+                    </button>
+                </div>
+
+                <div class="today-summary" id="todaySummary" style="display: none;">
+                    <h3>✅ Today's Entry Saved!</h3>
+                    <div class="summary-stats">
+                        <span class="stat">
+                            <span class="emoji">🏠</span>
+                            <span id="todayLife">0</span> Life Actions
+                        </span>
+                        <span class="stat">
+                            <span class="emoji">💼</span>
+                            <span id="todayBusiness">0</span> Business Actions
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="charts-section">
+                <h2>📊 Your Progress</h2>
+                
+                <div class="chart-container">
+                    <h3>Last 7 Days (Click bars to edit)</h3>
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h4>Total This Week</h4>
+                        <div class="stat-value" id="weekTotal">0</div>
+                        <div class="stat-label">Combined Actions</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Average per Day</h4>
+                        <div class="stat-value" id="dailyAverage">0</div>
+                        <div class="stat-label">This Month</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Best Day</h4>
+                        <div class="stat-value" id="bestDay">0</div>
+                        <div class="stat-label">Actions</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Test Data Button -->
+            <section class="input-section">
+                <h2>🧪 Test Data</h2>
+                <button onclick="addTestData()" style="background: linear-gradient(45deg, #667eea, #764ba2); color: white; border: none; padding: 15px 30px; border-radius: 25px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin: 10px;">
+                    Add Test Data for Last 7 Days
+                </button>
+                <button onclick="clearAllData()" style="background: linear-gradient(45deg, #e53e3e, #c53030); color: white; border: none; padding: 15px 30px; border-radius: 25px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin: 10px;">
+                    Clear All Data
+                </button>
+            </section>
+
+            <!-- Celebration Modal -->
+            <div class="modal" id="celebrationModal">
+                <div class="modal-content">
+                    <h2>🎉 Awesome!</h2>
+                    <p id="celebrationMessage"></p>
+                    <button onclick="closeCelebration()">Keep Going! 💪</button>
+                </div>
+            </div>
+
+            <!-- Edit Day Modal -->
+            <div class="modal" id="editDayModal">
+                <div class="modal-content edit-modal">
+                    <div class="modal-header">
+                        <h2>📝 Edit Day</h2>
+                        <span class="close-btn" onclick="closeEditModal()">&times;</span>
+                    </div>
+                    <div class="edit-form">
+                        <!-- Date display -->
+                        <div class="edit-date-display" id="editDateDisplay"></div>
+                        
+                        <!-- Life Actions Input -->
+                        <div class="action-input">
+                            <label for="editLifeActions">
+                                <span class="emoji">🏠</span>
+                                Life Actions
+                            </label>
+                            <div class="input-group">
+                                <input type="number" id="editLifeActions" min="0" max="100" placeholder="0">
+                                <div class="input-controls">
+                                    <div class="quick-buttons">
+                                        <button onclick="setEditQuickValue('editLifeActions', 1)">1</button>
+                                        <button onclick="setEditQuickValue('editLifeActions', 3)">3</button>
+                                        <button onclick="setEditQuickValue('editLifeActions', 5)">5</button>
+                                        <button onclick="setEditQuickValue('editLifeActions', 10)">10</button>
+                                    </div>
+                                    <button class="reset-btn" onclick="resetEditField('editLifeActions')" title="Reset to 0">
+                                        🔄 Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Business Actions Input -->
+                        <div class="action-input">
+                            <label for="editBusinessActions">
+                                <span class="emoji">💼</span>
+                                Business Actions
+                            </label>
+                            <div class="input-group">
+                                <input type="number" id="editBusinessActions" min="0" max="100" placeholder="0">
+                                <div class="input-controls">
+                                    <div class="quick-buttons">
+                                        <button onclick="setEditQuickValue('editBusinessActions', 1)">1</button>
+                                        <button onclick="setEditQuickValue('editBusinessActions', 3)">3</button>
+                                        <button onclick="setEditQuickValue('editBusinessActions', 5)">5</button>
+                                        <button onclick="setEditQuickValue('editBusinessActions', 10)">10</button>
+                                    </div>
+                                    <button class="reset-btn" onclick="resetEditField('editBusinessActions')" title="Reset to 0">
+                                        🔄 Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="edit-actions">
+                            <button class="save-edit-btn" onclick="saveEditedDay()">
+                                <span class="save-icon">💾</span>
+                                Save Changes
+                            </button>
+                            <button class="cancel-edit-btn" onclick="closeEditModal()">
+                                <span class="cancel-icon">❌</span>
+                                Cancel
+                            </button>
+                            <button class="delete-day-btn" onclick="deleteDay()">
+                                <span class="delete-icon">🗑️</span>
+                                Delete Entry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Test data functions
+        function addTestData() {
+            if (window.tracker) {
+                // Add sample data for the last 7 days
+                const today = new Date();
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() - i);
+                    const dateKey = date.toISOString().split('T')[0];
+                    
+                    tracker.data[dateKey] = {
+                        life: Math.floor(Math.random() * 10) + 1,
+                        business: Math.floor(Math.random() * 8) + 1,
+                        timestamp: date.toISOString()
+                    };
+                }
+                tracker.saveData();
+                tracker.updateAllMetrics();
+                tracker.showCelebration("🧪 Test Data Added!", "Sample data for the last 7 days has been added. Try clicking on the chart bars to edit them!");
+            }
+        }
+
+        function clearAllData() {
+            if (window.tracker && confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                tracker.data = {};
+                tracker.saveData();
+                tracker.updateAllMetrics();
+                tracker.showCelebration("🗑️ Data Cleared", "All data has been cleared.");
+            }
+        }
+    </script>
+</body>
+</html>
