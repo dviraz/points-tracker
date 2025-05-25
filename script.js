@@ -1161,6 +1161,273 @@ class ActionTracker {
         return "Great balance! Keep up the consistent daily tracking.";
     }
 
+    // Helper methods for proper calendar period calculations
+    getWeekStartDate(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day; // Sunday = 0
+        return new Date(d.setDate(diff));
+    }
+
+    getMonthStartDate(date) {
+        return new Date(date.getFullYear(), date.getMonth(), 1);
+    }
+
+    getCurrentMonthTotal() {
+        const today = new Date();
+        return this.getCalendarMonthTotal(today);
+    }
+
+    getCalendarMonthTotal(date) {
+        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        
+        let total = 0;
+        for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
+            const dateKey = d.toISOString().split('T')[0];
+            const dayData = this.data[dateKey];
+            
+            if (dayData) {
+                total += (dayData.life || 0) + (dayData.business || 0);
+            }
+        }
+        
+        return total;
+    }
+
+    // Missing saveEntry method and other core functionality
+    saveEntry() {
+        const lifeField = document.getElementById('lifeActions');
+        const businessField = document.getElementById('businessActions');
+        
+        if (!lifeField || !businessField) return;
+        
+        const life = parseInt(lifeField.value) || 0;
+        const business = parseInt(businessField.value) || 0;
+        
+        if (life === 0 && business === 0) {
+            this.showCelebration("⚠️ No Actions", "Please enter at least one action before saving.");
+            return;
+        }
+        
+        const today = this.getTodayKey();
+        this.data[today] = {
+            life: life,
+            business: business,
+            timestamp: new Date().toISOString()
+        };
+        
+        this.saveData();
+        
+        // Update all sections
+        this.showTodaySummary(life, business);
+        this.updateStreakCounter();
+        this.updateStats();
+        this.updateCharts();
+        this.updateGoalProgress();
+        this.updateReports();
+        this.updateProgressRings();
+        this.updateBadges();
+        this.updatePersonalBests();
+        this.renderHeatmap();
+        this.loadQuickTemplates();
+        
+        // Check for celebrations
+        this.checkForCelebrations(life, business);
+        
+        // Show success message
+        this.showCelebration("✅ Saved!", `Recorded ${life} life actions and ${business} business actions.`);
+    }
+
+    checkForCelebrations(life, business) {
+        const total = life + business;
+        const streak = this.getCurrentStreak();
+        
+        // Balanced Day celebration
+        if (life > 0 && business > 0) {
+            setTimeout(() => {
+                this.showCelebration("⚖️ Balanced Day!", "Great job completing both life and business actions!");
+            }, 1000);
+        }
+        
+        // Great Day celebration
+        if (total >= 10) {
+            setTimeout(() => {
+                this.showCelebration("🌟 Great Day!", `Amazing! You completed ${total} actions today!`);
+            }, 2000);
+        }
+        
+        // Power Day celebration
+        if (total >= 20) {
+            setTimeout(() => {
+                this.showCelebration("🚀 Power Day!", `Incredible! ${total} actions - you're on fire!`);
+            }, 3000);
+        }
+        
+        // Week Streak celebration
+        if (streak === 7) {
+            setTimeout(() => {
+                this.showCelebration("🔥 Week Streak!", "7 days in a row! You're building a great habit!");
+            }, 4000);
+        }
+        
+        // Month Streak celebration
+        if (streak === 30) {
+            setTimeout(() => {
+                this.showCelebration("🏆 Month Streak!", "30 days! You're officially a tracking master!");
+            }, 5000);
+        }
+    }
+
+    showCelebration(title, message) {
+        const modal = document.getElementById('celebrationModal');
+        const titleEl = document.getElementById('celebrationTitle');
+        const messageEl = document.getElementById('celebrationMessage');
+        
+        if (modal && titleEl && messageEl) {
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+            modal.style.display = 'block';
+            
+            // Auto-close after 3 seconds
+            setTimeout(() => {
+                this.closeCelebration();
+            }, 3000);
+        }
+    }
+
+    closeCelebration() {
+        const modal = document.getElementById('celebrationModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    resetField(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.value = 0;
+            field.focus();
+        }
+    }
+
+    // Chart interaction methods
+    getDateFromChartIndex(index) {
+        const date = new Date();
+        date.setDate(date.getDate() - (6 - index)); // 6-index because we show 7 days (0-6)
+        return date.toISOString().split('T')[0];
+    }
+
+    openEditModal(dateKey) {
+        const modal = document.getElementById('editDayModal');
+        const dateEl = document.getElementById('editDate');
+        const lifeField = document.getElementById('editLifeActions');
+        const businessField = document.getElementById('editBusinessActions');
+        
+        if (!modal || !dateEl || !lifeField || !businessField) return;
+        
+        // Store the date being edited
+        this.editingDate = dateKey;
+        
+        // Format date for display
+        const date = new Date(dateKey);
+        const formattedDate = date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        dateEl.textContent = formattedDate;
+        
+        // Load existing data
+        const dayData = this.data[dateKey] || { life: 0, business: 0 };
+        lifeField.value = dayData.life || 0;
+        businessField.value = dayData.business || 0;
+        
+        modal.style.display = 'block';
+    }
+
+    saveEditedDay() {
+        if (!this.editingDate) return;
+        
+        const lifeField = document.getElementById('editLifeActions');
+        const businessField = document.getElementById('editBusinessActions');
+        
+        if (!lifeField || !businessField) return;
+        
+        const life = parseInt(lifeField.value) || 0;
+        const business = parseInt(businessField.value) || 0;
+        
+        if (life === 0 && business === 0) {
+            // Delete the entry if both are 0
+            delete this.data[this.editingDate];
+        } else {
+            // Update the entry
+            this.data[this.editingDate] = {
+                life: life,
+                business: business,
+                timestamp: this.data[this.editingDate]?.timestamp || new Date().toISOString()
+            };
+        }
+        
+        this.saveData();
+        
+        // Update all displays
+        this.loadTodaysData();
+        this.updateStreakCounter();
+        this.updateStats();
+        this.updateCharts();
+        this.updateGoalProgress();
+        this.updateReports();
+        this.updateProgressRings();
+        this.updateBadges();
+        this.updatePersonalBests();
+        this.renderHeatmap();
+        this.loadQuickTemplates();
+        
+        this.closeEditModal();
+        this.showCelebration("✅ Updated!", "Day successfully updated.");
+    }
+
+    closeEditModal() {
+        const modal = document.getElementById('editDayModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+        this.editingDate = null;
+    }
+
+    deleteDay() {
+        if (!this.editingDate) return;
+        
+        delete this.data[this.editingDate];
+        this.saveData();
+        
+        // Update all displays
+        this.loadTodaysData();
+        this.updateStreakCounter();
+        this.updateStats();
+        this.updateCharts();
+        this.updateGoalProgress();
+        this.updateReports();
+        this.updateProgressRings();
+        this.updateBadges();
+        this.updatePersonalBests();
+        this.renderHeatmap();
+        this.loadQuickTemplates();
+        
+        this.closeEditModal();
+        this.showCelebration("🗑️ Deleted", "Day data removed successfully.");
+    }
+
+    resetEditField(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.value = 0;
+            field.focus();
+        }
+    }
+
     // ...existing code...
 }
 
