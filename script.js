@@ -460,8 +460,22 @@ class ActionTracker {
             }
         }
         
+        // Format the week period with specific dates and month names
+        const startMonth = weekStart.toLocaleDateString('en-US', { month: 'short' });
+        const startDay = weekStart.getDate();
+        const endMonth = today.toLocaleDateString('en-US', { month: 'short' });
+        const endDay = today.getDate();
+        const year = today.getFullYear();
+        
+        let periodText;
+        if (startMonth === endMonth) {
+            periodText = `${startMonth} ${startDay}-${endDay}, ${year}`;
+        } else {
+            periodText = `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
+        }
+        
         return {
-            period: `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+            period: periodText,
             totalLife,
             totalBusiness,
             totalActions: totalLife + totalBusiness,
@@ -506,8 +520,12 @@ class ActionTracker {
         // Use the existing getCurrentStreak() method for accurate streak calculation
         const currentStreak = this.getCurrentStreak();
         
+        // Format the month period with specific month name and year
+        const monthName = today.toLocaleDateString('en-US', { month: 'long' });
+        const year = today.getFullYear();
+        
         return {
-            period: today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+            period: `${monthName} ${year}`,
             totalLife,
             totalBusiness,
             totalActions: totalLife + totalBusiness,
