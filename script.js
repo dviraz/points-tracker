@@ -1240,8 +1240,8 @@ class ActionTracker {
         const businessActions = parseInt(document.getElementById('editBusinessActions').value) || 0;
         
         // Validation (same as current day)
-        if (lifeActions < 0 || lifeActions > 100 || businessActions < 0 || businessActions > 100) {
-            this.showCelebration("Invalid Input ❌", "Please enter values between 0 and 100");
+        if (lifeActions < 0 || lifeActions > 400 || businessActions < 0 || businessActions > 400) {
+            this.showCelebration("Invalid Input ❌", "Please enter values between 0 and 400");
             return;
         }
         
