@@ -924,232 +924,244 @@ class ActionTracker {
         }
     }
 
-    // Helper methods for proper calendar period calculations
-    getWeekStartDate(date) {
-        const d = new Date(date);
-        const day = d.getDay();
-        const diff = d.getDate() - day; // Sunday = 0
-        return new Date(d.setDate(diff));
-    }
-
-    getMonthStartDate(date) {
-        return new Date(date.getFullYear(), date.getMonth(), 1);
-    }
-
-    getCurrentMonthTotal() {
-        const today = new Date();
-        return this.getCalendarMonthTotal(today);
-    }
-
-    getCalendarMonthTotal(date) {
-        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
-        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    // Missing helper methods
+    getCurrentStreak() {
+        let streak = 0;
+        let currentDate = new Date();
         
-        let total = 0;
-        for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
-            const dateKey = d.toISOString().split('T')[0];
+        while (true) {
+            const dateKey = currentDate.toISOString().split('T')[0];
             const dayData = this.data[dateKey];
             
-            if (dayData) {
-                total += (dayData.life || 0) + (dayData.business || 0);
+            if (dayData && (dayData.life > 0 || dayData.business > 0)) {
+                streak++;
+                currentDate.setDate(currentDate.getDate() - 1);
+            } else {
+                break;
             }
         }
         
-        return total;
+        return streak;
     }
-    saveEntry() {
-        const lifeActions = parseInt(document.getElementById('lifeActions').value) || 0;
-        const businessActions = parseInt(document.getElementById('businessActions').value) || 0;
-        
-        if (lifeActions === 0 && businessActions === 0) {
-            this.showCelebration("Don't forget to add your actions! 😊", "Every action counts, no matter how small!");
-            return;
-        }
 
+    getTotalActions() {
+        return Object.values(this.data).reduce((total, day) => {
+            return total + (day.life || 0) + (day.business || 0);
+        }, 0);
+    }
+
+    getTodayActions() {
         const today = this.getTodayKey();
-        this.data[today] = {
-            life: lifeActions,
-            business: businessActions,
-            timestamp: new Date().toISOString()
+        const todayData = this.data[today] || { life: 0, business: 0 };
+        return (todayData.life || 0) + (todayData.business || 0);
+    }
+
+    getWeeklyBalance() {
+        const weekData = this.getWeekData();
+        const weekLife = weekData.lifeData.reduce((sum, val) => sum + val, 0);
+        const weekBusiness = weekData.businessData.reduce((sum, val) => sum + val, 0);
+        
+        // Balanced if both have actions and difference is small
+        if (weekLife > 0 && weekBusiness > 0) {
+            const ratio = Math.min(weekLife, weekBusiness) / Math.max(weekLife, weekBusiness);
+            return ratio >= 0.5; // Within 50% of each other
+        }
+        return false;
+    }
+
+    formatDate(dateString) {
+        if (!dateString) return '-';
+        return new Date(dateString).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            year: 'numeric'
+        });
+    }
+
+    renderHeatmap() {
+        const heatmapGrid = document.getElementById('heatmapGrid');
+        if (!heatmapGrid) return;
+        
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() - 364); // Show last 365 days
+        
+        heatmapGrid.innerHTML = '';
+        
+        // Create day squares
+        for (let i = 0; i < 365; i++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + i);
+            const dateKey = date.toISOString().split('T')[0];
+            const dayData = this.data[dateKey];
+            
+            const square = this.createHeatmapSquare(date, dayData);
+            heatmapGrid.appendChild(square);
+        }
+    }
+
+    createHeatmapSquare(date, dayData) {
+        const square = document.createElement('div');
+        square.className = 'heatmap-square';
+        
+        const total = dayData ? (dayData.life || 0) + (dayData.business || 0) : 0;
+        const level = this.getHeatmapLevel(total);
+        
+        square.setAttribute('data-level', level);
+        square.setAttribute('data-date', date.toISOString().split('T')[0]);
+        square.setAttribute('data-actions', total);
+        
+        // Add tooltip functionality
+        square.addEventListener('mouseenter', (e) => this.showHeatmapTooltip(e, date, dayData));
+        square.addEventListener('mouseleave', () => this.hideHeatmapTooltip());
+        
+        return square;
+    }
+
+    getHeatmapLevel(total) {
+        if (total === 0) return 0;
+        if (total <= 2) return 1;
+        if (total <= 5) return 2;
+        if (total <= 10) return 3;
+        return 4;
+    }
+
+    showHeatmapTooltip(event, date, dayData) {
+        const tooltip = document.getElementById('heatmapTooltip');
+        if (!tooltip) return;
+        
+        const total = dayData ? (dayData.life || 0) + (dayData.business || 0) : 0;
+        const dateStr = date.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'long', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
+        
+        const dateEl = tooltip.querySelector('.tooltip-date');
+        const actionsEl = tooltip.querySelector('.tooltip-actions');
+        
+        if (dateEl) dateEl.textContent = dateStr;
+        if (actionsEl) {
+            actionsEl.textContent = total === 0 ? 'No actions' : 
+                total === 1 ? '1 action' : `${total} actions`;
+        }
+        
+        tooltip.style.display = 'block';
+        tooltip.style.left = event.pageX + 10 + 'px';
+        tooltip.style.top = event.pageY - 10 + 'px';
+    }
+
+    hideHeatmapTooltip() {
+        const tooltip = document.getElementById('heatmapTooltip');
+        if (tooltip) {
+            tooltip.style.display = 'none';
+        }
+    }
+
+    loadQuickTemplates() {
+        const insights = this.generateWeeklyInsights();
+        
+        // Update insight cards with real data instead of placeholders
+        const insightCard1 = document.getElementById('insightCard1');
+        if (insightCard1) {
+            const textEl = insightCard1.querySelector('.insight-text');
+            if (textEl) {
+                textEl.textContent = insights.weekTotal > 0 ? 
+                    `This week: ${insights.weekTotal} total actions (${insights.weekLife} life, ${insights.weekBusiness} business)` : 
+                    'No actions recorded this week yet. Start today!';
+            }
+        }
+        
+        const insightCard2 = document.getElementById('insightCard2');
+        if (insightCard2) {
+            const textEl = insightCard2.querySelector('.insight-text');
+            if (textEl) textEl.textContent = insights.bestDayMessage;
+        }
+        
+        const insightCard3 = document.getElementById('insightCard3');
+        if (insightCard3) {
+            const textEl = insightCard3.querySelector('.insight-text');
+            if (textEl) textEl.textContent = insights.streakMessage;
+        }
+        
+        const insightCard4 = document.getElementById('insightCard4');
+        if (insightCard4) {
+            const textEl = insightCard4.querySelector('.insight-text');
+            if (textEl) textEl.textContent = insights.goalMessage;
+        }
+        
+        const insightCard5 = document.getElementById('insightCard5');
+        if (insightCard5) {
+            const textEl = insightCard5.querySelector('.insight-text');
+            if (textEl) textEl.textContent = insights.suggestion;
+        }
+    }
+
+    generateWeeklyInsights() {
+        const weekData = this.getWeekData();
+        const weekLife = weekData.lifeData.reduce((sum, val) => sum + val, 0);
+        const weekBusiness = weekData.businessData.reduce((sum, val) => sum + val, 0);
+        const weekTotal = weekLife + weekBusiness;
+        
+        // Find best day
+        let bestDay = 0;
+        let bestDayIndex = -1;
+        for (let i = 0; i < weekData.lifeData.length; i++) {
+            const dayTotal = weekData.lifeData[i] + weekData.businessData[i];
+            if (dayTotal > bestDay) {
+                bestDay = dayTotal;
+                bestDayIndex = i;
+            }
+        }
+        
+        // Calculate goal progress
+        const lifeGoalProgress = Math.round((weekLife / this.goals.weeklyLife) * 100);
+        const businessGoalProgress = Math.round((weekBusiness / this.goals.weeklyBusiness) * 100);
+        
+        // Get current streak
+        const streak = this.getCurrentStreak();
+        
+        return {
+            weekTotal,
+            weekLife,
+            weekBusiness,
+            bestDayMessage: bestDayIndex >= 0 ?
+                `Your most productive day was ${weekData.labels[bestDayIndex]} with ${bestDay} actions` :
+                "No actions recorded this week yet",
+            streakMessage: streak === 0 ?
+                "You don't have an active streak yet. Start today!" :
+                `You're on a ${streak}-day streak! Keep it going! 🔥`,
+            goalMessage: `Life actions: ${lifeGoalProgress}% of weekly goal. Business actions: ${businessGoalProgress}% of weekly goal.`,
+            suggestion: this.generateSuggestion(weekLife, weekBusiness, streak)
         };
-
-        this.saveData();
-        this.showTodaySummary(lifeActions, businessActions);
-        this.updateStreakCounter();
-        this.updateStats();
-        this.updateCharts();
-        this.updateGoalProgress();
-        this.updateReports();
-        this.updateProgressRings();
-        this.updateBadges(); // Changed from this.updateAchievements() to this.updateBadges()
-        this.updatePersonalBests();
-        this.renderHeatmap();
-        this.generateWeeklyInsights();
-
-        // Add success feedback
-        const saveBtn = document.querySelector('.save-btn');
-        if (saveBtn) {
-            const originalText = saveBtn.innerHTML;
-            saveBtn.innerHTML = '<span class="save-icon">✅</span> Saved!';
-            saveBtn.style.background = 'linear-gradient(45deg, #48bb78, #38a169)';
-            
-            setTimeout(() => {
-                saveBtn.innerHTML = originalText;
-                saveBtn.style.background = '';
-            }, 2000);
-        }
     }
 
-    resetField(fieldId) {
-        const field = document.getElementById(fieldId);
-        if (field) {
-            field.value = 0;
-            field.focus();
-            
-            // Add visual feedback for reset
-            field.style.transform = 'scale(1.1)';
-            field.style.borderColor = '#ff6b6b';
-            field.style.boxShadow = '0 0 15px rgba(255, 107, 107, 0.5)';
-            
-            setTimeout(() => {
-                if (field) {
-                    field.style.transform = '';
-                    field.style.borderColor = '';
-                    field.style.boxShadow = '';
-                }
-            }, 300);
-        }
-    }
-
-    showCelebration(title, message) {
-        const celebrationMessage = document.getElementById('celebrationMessage');
-        const modal = document.getElementById('celebrationModal');
-        
-        if (celebrationMessage) celebrationMessage.textContent = message;
-        if (modal) {
-            const modalH2 = modal.querySelector('h2');
-            if (modalH2) modalH2.textContent = title;
-            modal.style.display = 'block';
-        }
-    }
-
-    closeCelebration() {
-        const modal = document.getElementById('celebrationModal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    }
-
-    // Helper method to convert chart index to date
-    getDateFromChartIndex(index) {
-        const date = new Date();
-        date.setDate(date.getDate() - (6 - index)); // 6-index because chart shows last 7 days
-        return date.toISOString().split('T')[0];
-    }
-
-    // Method to open edit modal for a specific date
-    openEditModal(dateKey) {
-        const dayData = this.data[dateKey] || { life: 0, business: 0 };
-        const date = new Date(dateKey);
-        
-        // Populate modal with existing data
-        document.getElementById('editLifeActions').value = dayData.life;
-        document.getElementById('editBusinessActions').value = dayData.business;
-        document.getElementById('editDateDisplay').textContent =
-            date.toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric'
-            });
-        
-        // Store current editing date
-        this.currentEditDate = dateKey;
-        
-        // Show modal
-        document.getElementById('editDayModal').style.display = 'block';
-    }
-
-    // Method to save edited day data
-    saveEditedDay() {
-        const lifeActions = parseInt(document.getElementById('editLifeActions').value) || 0;
-        const businessActions = parseInt(document.getElementById('editBusinessActions').value) || 0;
-        
-        // Validation (same as current day)
-        if (lifeActions < 0 || lifeActions > 400 || businessActions < 0 || businessActions > 400) {
-            this.showCelebration("Invalid Input ❌", "Please enter values between 0 and 400");
-            return;
+    generateSuggestion(weekLife, weekBusiness, streak) {
+        if (weekLife === 0 && weekBusiness === 0) {
+            return "Start with just one small action today!";
         }
         
-        // Update data
-        this.data[this.currentEditDate] = {
-            life: lifeActions,
-            business: businessActions,
-            timestamp: this.data[this.currentEditDate]?.timestamp || new Date().toISOString(),
-            lastModified: new Date().toISOString()
-        };
-        
-        // Save and update all metrics
-        this.saveData();
-        this.updateAllMetrics();
-        this.closeEditModal();
-        
-        // Show success feedback
-        this.showCelebration("✅ Day Updated!", "Your changes have been saved successfully.");
-    }
-
-    // Method to delete a day's entry
-    deleteDay() {
-        if (confirm('Are you sure you want to delete this day\'s entry? This action cannot be undone.')) {
-            delete this.data[this.currentEditDate];
-            this.saveData();
-            this.updateAllMetrics();
-            this.closeEditModal();
-            this.showCelebration("🗑️ Entry Deleted", "The day's entry has been removed.");
+        if (weekLife > weekBusiness * 2) {
+            return "Consider adding some business actions to balance your week.";
         }
-    }
-
-    // Comprehensive metrics update method
-    updateAllMetrics() {
-        this.updateStreakCounter();
-        this.updateStats();
-        this.updateCharts();
-        this.updateGoalProgress();
-        this.updateReports();
-        this.updateProgressRings();
-        this.updateBadges();
-        this.updatePersonalBests();
-        this.renderHeatmap();
-        this.generateWeeklyInsights();
-    }
-
-    // Close edit modal
-    closeEditModal() {
-        document.getElementById('editDayModal').style.display = 'none';
-        this.currentEditDate = null;
-    }
-
-    // Reset field in edit modal
-    resetEditField(fieldId) {
-        const field = document.getElementById(fieldId);
-        if (field) {
-            field.value = 0;
-            field.focus();
-            
-            // Add visual feedback for reset
-            field.style.transform = 'scale(1.1)';
-            field.style.borderColor = '#ff6b6b';
-            field.style.boxShadow = '0 0 15px rgba(255, 107, 107, 0.5)';
-            
-            setTimeout(() => {
-                if (field) {
-                    field.style.transform = '';
-                    field.style.borderColor = '';
-                    field.style.boxShadow = '';
-                }
-            }, 300);
+        
+        if (weekBusiness > weekLife * 2) {
+            return "Don't forget about life actions - they're important too!";
         }
+        
+        if (streak === 0) {
+            return "Build a streak by tracking actions daily.";
+        }
+        
+        if (streak < 7) {
+            return "You're building momentum! Keep going to reach a week streak.";
+        }
+        
+        return "Great balance! Keep up the consistent daily tracking.";
     }
+
+    // ...existing code...
 }
 
 // Global functions for HTML onclick events
