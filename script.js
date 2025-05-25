@@ -910,9 +910,9 @@ class ActionTracker {
         this.safeUpdateElement('bestSingleDay', this.personalBests.mostProductiveDay || mostProductiveDay || 0);
         this.safeUpdateElement('bestSingleDayDate', this.formatDate(this.personalBests.mostProductiveDayDate || mostProductiveDayDate));
         this.safeUpdateElement('bestWeek', this.personalBests.bestWeek || bestWeek || 0);
-        this.safeUpdateElement('bestWeekDate', this.formatDate(this.personalBests.bestWeekDate || bestWeekDate));
+        this.safeUpdateElement('bestWeekDate', this.formatWeekRange(this.personalBests.bestWeekDate || bestWeekDate));
         this.safeUpdateElement('bestMonth', this.personalBests.bestMonth || bestMonth || 0);
-        this.safeUpdateElement('bestMonthDate', this.formatDate(this.personalBests.bestMonthDate || bestMonthDate));
+        this.safeUpdateElement('bestMonthDate', this.formatMonthRange(this.personalBests.bestMonthDate || bestMonthDate));
         this.safeUpdateElement('bestLifeDay', this.personalBests.mostLifeActions || mostLifeActions || 0);
         this.safeUpdateElement('bestLifeDayDate', this.formatDate(this.personalBests.mostLifeActionsDate || mostLifeActionsDate));
         this.safeUpdateElement('bestBusinessDay', this.personalBests.mostBusinessActions || mostBusinessActions || 0);
@@ -975,6 +975,36 @@ class ActionTracker {
             month: 'short', 
             day: 'numeric',
             year: 'numeric'
+        });
+    }
+
+    // New method to format week ranges
+    formatWeekRange(weekStartDate) {
+        if (!weekStartDate) return '-';
+        
+        const startDate = new Date(weekStartDate);
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        
+        const startMonth = startDate.toLocaleDateString('en-US', { month: 'short' });
+        const endMonth = endDate.toLocaleDateString('en-US', { month: 'short' });
+        const year = endDate.getFullYear();
+        
+        if (startMonth === endMonth) {
+            return `${startMonth} ${startDate.getDate()}-${endDate.getDate()}, ${year}`;
+        } else {
+            return `${startMonth} ${startDate.getDate()} - ${endMonth} ${endDate.getDate()}, ${year}`;
+        }
+    }
+
+    // New method to format month ranges
+    formatMonthRange(monthStartDate) {
+        if (!monthStartDate) return '-';
+        
+        const date = new Date(monthStartDate);
+        return date.toLocaleDateString('en-US', { 
+            month: 'long', 
+            year: 'numeric' 
         });
     }
 
