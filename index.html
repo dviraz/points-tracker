@@ -483,88 +483,187 @@
             </section>
 
 
-            <!-- Celebration Modal -->
-            <div class="modal" id="celebrationModal">
-                <div class="modal-content">
-                    <h2>🎉 Awesome!</h2>
-                    <p id="celebrationMessage"></p>
-                    <button onclick="closeCelebration()">Keep Going! 💪</button>
-                </div>
-            </div>
-
-            <!-- Edit Day Modal -->
-            <div class="modal" id="editDayModal">
-                <div class="modal-content edit-modal">
-                    <div class="modal-header">
-                        <h2>📝 Edit Day</h2>
-                        <span class="close-btn" onclick="closeEditModal()">&times;</span>
-                    </div>
-                    <div class="edit-form">
-                        <!-- Date display -->
-                        <div class="edit-date-display" id="editDateDisplay"></div>
-                        
-                        <!-- Life Actions Input -->
-                        <div class="action-input">
-                            <label for="editLifeActions">
-                                <span class="emoji">🏠</span>
-                                Life Actions
-                            </label>
-                            <div class="input-group">
-                                <input type="number" id="editLifeActions" min="0" max="400" placeholder="0">
-                                <div class="input-controls">
-                                    <div class="quick-buttons">
-                                        <button onclick="setEditQuickValue('editLifeActions', 1)">1</button>
-                                        <button onclick="setEditQuickValue('editLifeActions', 3)">3</button>
-                                        <button onclick="setEditQuickValue('editLifeActions', 5)">5</button>
-                                        <button onclick="setEditQuickValue('editLifeActions', 10)">10</button>
-                                    </div>
-                                    <button class="reset-btn" onclick="resetEditField('editLifeActions')" title="Reset to 0">
-                                        🔄 Reset
-                                    </button>
+            <!-- Data Backup & Safety Section -->
+            <section class="backup-section">
+                <h2>💾 Data Backup & Safety</h2>
+                <div class="backup-container">
+                    <div class="backup-info">
+                        <div class="backup-status">
+                            <h3>🛡️ Your Data Safety Status</h3>
+                            <div class="safety-indicators">
+                                <div class="safety-indicator" id="localStorageStatus">
+                                    <span class="indicator-icon">💾</span>
+                                    <span class="indicator-text">Local Storage: Active</span>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Business Actions Input -->
-                        <div class="action-input">
-                            <label for="editBusinessActions">
-                                <span class="emoji">💼</span>
-                                Business Actions
-                            </label>
-                            <div class="input-group">
-                                <input type="number" id="editBusinessActions" min="0" max="400" placeholder="0">
-                                <div class="input-controls">
-                                    <div class="quick-buttons">
-                                        <button onclick="setEditQuickValue('editBusinessActions', 1)">1</button>
-                                        <button onclick="setEditQuickValue('editBusinessActions', 3)">3</button>
-                                        <button onclick="setEditQuickValue('editBusinessActions', 5)">5</button>
-                                        <button onclick="setEditQuickValue('editBusinessActions', 10)">10</button>
-                                    </div>
-                                    <button class="reset-btn" onclick="resetEditField('editBusinessActions')" title="Reset to 0">
-                                        🔄 Reset
-                                    </button>
+                                <div class="safety-indicator" id="lastBackupStatus">
+                                    <span class="indicator-icon">📅</span>
+                                    <span class="indicator-text" id="lastBackupText">Last Backup: Never</span>
+                                </div>
+                                <div class="safety-indicator" id="dataCountStatus">
+                                    <span class="indicator-icon">📊</span>
+                                    <span class="indicator-text" id="dataCountText">0 days of data</span>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Action Buttons -->
-                        <div class="edit-actions">
-                            <button class="save-edit-btn" onclick="saveEditedDay()">
-                                <span class="save-icon">💾</span>
-                                Save Changes
-                            </button>
-                            <button class="cancel-edit-btn" onclick="closeEditModal()">
-                                <span class="cancel-icon">❌</span>
-                                Cancel
-                            </button>
-                            <button class="delete-day-btn" onclick="deleteDay()">
-                                <span class="delete-icon">🗑️</span>
-                                Delete Entry
-                            </button>
+                        <div class="backup-recommendations">
+                            <h4>📋 Backup Recommendations</h4>
+                            <ul class="recommendation-list">
+                                <li>✅ Export your data weekly to keep it safe</li>
+                                <li>💾 Save backup files to cloud storage (Google Drive, Dropbox, etc.)</li>
+                                <li>📱 Access your data on multiple devices by importing backups</li>
+                                <li>🔄 Enable automatic reminders for regular backups</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="backup-actions">
+                        <h3>🔧 Backup Actions</h3>
+                        
+                        <!-- Export Section -->
+                        <div class="backup-action-group">
+                            <h4>📤 Export Your Data</h4>
+                            <div class="export-options">
+                                <button class="backup-btn export-btn" onclick="exportAllData()">
+                                    <span class="btn-icon">📦</span>
+                                    Export All Data (JSON)
+                                </button>
+                                <button class="backup-btn export-btn" onclick="exportDataAsCSV()">
+                                    <span class="btn-icon">📊</span>
+                                    Export as Spreadsheet (CSV)
+                                </button>
+                                <button class="backup-btn export-btn" onclick="exportDataAsText()">
+                                    <span class="btn-icon">📄</span>
+                                    Export as Text Report
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Import Section -->
+                        <div class="backup-action-group">
+                            <h4>📥 Import Data</h4>
+                            <div class="import-options">
+                                <input type="file" id="dataFileInput" accept=".json,.csv,.txt" style="display: none;">
+                                <button class="backup-btn import-btn" onclick="document.getElementById('dataFileInput').click()">
+                                    <span class="btn-icon">📂</span>
+                                    Import from File
+                                </button>
+                                <div class="import-help">
+                                    <small>Supports JSON, CSV, and text files. Your existing data will be merged with imported data.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Auto-Backup Settings -->
+                        <div class="backup-action-group">
+                            <h4>🔔 Backup Reminders</h4>
+                            <div class="auto-backup-settings">
+                                <label class="backup-setting">
+                                    <input type="checkbox" id="weeklyBackupReminder">
+                                    <span class="checkmark"></span>
+                                    Remind me weekly to backup my data
+                                </label>
+                                <label class="backup-setting">
+                                    <input type="checkbox" id="monthlyBackupReminder">
+                                    <span class="checkmark"></span>
+                                    Remind me monthly to backup my data
+                                </label>
+                                <button class="backup-btn settings-btn" onclick="saveBackupSettings()">
+                                    <span class="btn-icon">⚙️</span>
+                                    Save Settings
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Emergency Actions -->
+                        <div class="backup-action-group emergency-group">
+                            <h4>🚨 Emergency Actions</h4>
+                            <div class="emergency-actions">
+                                <button class="backup-btn emergency-btn" onclick="createEmergencyBackup()">
+                                    <span class="btn-icon">🆘</span>
+                                    Create Emergency Backup
+                                </button>
+                                <button class="backup-btn danger-btn" onclick="showClearDataModal()">
+                                    <span class="btn-icon">⚠️</span>
+                                    Clear All Data
+                                </button>
+                            </div>
+                            <div class="emergency-help">
+                                <small>⚠️ Emergency backup creates multiple file formats instantly. Use "Clear All Data" only if you want to start fresh.</small>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
+
+            <!-- Vercel-Specific Backup Tips -->
+            <section class="vercel-tips-section">
+                <h2>🌐 Vercel Hosting Benefits</h2>
+                <div class="vercel-info">
+                    <div class="vercel-benefit">
+                        <div class="benefit-icon">⚡</div>
+                        <div class="benefit-text">
+                            <h4>Lightning Fast</h4>
+                            <p>Your app loads instantly from Vercel's global CDN</p>
+                        </div>
+                    </div>
+                    <div class="vercel-benefit">
+                        <div class="benefit-icon">🔒</div>
+                        <div class="benefit-text">
+                            <h4>Privacy First</h4>
+                            <p>Your data stays in your browser - complete privacy</p>
+                        </div>
+                    </div>
+                    <div class="vercel-benefit">
+                        <div class="benefit-icon">📱</div>
+                        <div class="benefit-text">
+                            <h4>Works Everywhere</h4>
+                            <p>Access from any device with the same URL</p>
+                        </div>
+                    </div>
+                    <div class="vercel-benefit">
+                        <div class="benefit-icon">💾</div>
+                        <div class="benefit-text">
+                            <h4>Smart Backups</h4>
+                            <p>Export/import your data to sync across devices</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="backup-workflow">
+                    <h3>🔄 Recommended Backup Workflow</h3>
+                    <div class="workflow-steps">
+                        <div class="workflow-step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>Weekly Export</h4>
+                                <p>Export your data every Sunday using the JSON export button</p>
+                            </div>
+                        </div>
+                        <div class="workflow-step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>Cloud Storage</h4>
+                                <p>Save backup files to Google Drive, Dropbox, or OneDrive</p>
+                            </div>
+                        </div>
+                        <div class="workflow-step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>Multiple Devices</h4>
+                                <p>Import your backup on phone, tablet, or other computers</p>
+                            </div>
+                        </div>
+                        <div class="workflow-step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4>Stay Synced</h4>
+                                <p>Regular exports keep all your devices up to date</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 

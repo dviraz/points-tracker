@@ -1458,7 +1458,420 @@ class ActionTracker {
         }
     }
 
-    // ...existing code...
+    // Data Backup and Safety Functions - Optimized for Vercel Hosting
+    exportAllData() {
+        if (!window.tracker) return;
+        
+        const backupData = {
+            version: "1.0",
+            exportDate: new Date().toISOString(),
+            appData: {
+                trackerData: window.tracker.data,
+                goals: window.tracker.goals,
+                achievements: window.tracker.achievements,
+                personalBests: window.tracker.personalBests
+            },
+            metadata: {
+                totalDays: Object.keys(window.tracker.data).length,
+                totalActions: Object.values(window.tracker.data).reduce((sum, day) => sum + (day.life || 0) + (day.business || 0), 0),
+                currentStreak: window.tracker.getCurrentStreak(),
+                dataRange: this.getDataRange()
+            }
+        };
+        
+        const dataStr = JSON.stringify(backupData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = `action-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Update last backup timestamp
+        localStorage.setItem('lastBackupDate', new Date().toISOString());
+        this.updateBackupStatus();
+        
+        window.tracker.showCelebration("📦 Export Complete!", "Your data has been safely exported. Save this file to your cloud storage!");
+    }
+
+    exportDataAsCSV() {
+        if (!window.tracker) return;
+        
+        let csvContent = "Date,Day of Week,Life Actions,Business Actions,Total Actions,Notes\n";
+        
+        const sortedDates = Object.keys(window.tracker.data).sort();
+        sortedDates.forEach(dateKey => {
+            const dayData = window.tracker.data[dateKey];
+            const date = new Date(dateKey);
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+            const life = dayData.life || 0;
+            const business = dayData.business || 0;
+            const total = life + business;
+            
+            csvContent += `${dateKey},${dayName},${life},${business},${total},""\n`;
+        });
+        
+        const dataBlob = new Blob([csvContent], { type: 'text/csv' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = `action-tracker-data-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        window.tracker.showCelebration("📊 CSV Export Complete!", "Your data is ready for spreadsheet analysis!");
+    }
+
+    exportDataAsText() {
+        if (!window.tracker) return;
+        
+        const report = this.generateTextReport();
+        const dataBlob = new Blob([report], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = `action-tracker-report-${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        window.tracker.showCelebration("📄 Text Report Ready!", "Your comprehensive report has been generated!");
+    }
+
+    generateTextReport() {
+        const data = window.tracker.data;
+        const sortedDates = Object.keys(data).sort();
+        const totalDays = sortedDates.length;
+        const totalActions = Object.values(data).reduce((sum, day) => sum + (day.life || 0) + (day.business || 0), 0);
+        const totalLife = Object.values(data).reduce((sum, day) => sum + (day.life || 0), 0);
+        const totalBusiness = Object.values(data).reduce((sum, day) => sum + (day.business || 0), 0);
+        
+        let report = `Daily Action Tracker - Comprehensive Report
+Generated: ${new Date().toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+})}
+
+SUMMARY STATISTICS
+==================
+Total Days Tracked: ${totalDays}
+Total Actions: ${totalActions}
+Total Life Actions: ${totalLife}
+Total Business Actions: ${totalBusiness}
+Average Actions per Day: ${totalDays > 0 ? (totalActions / totalDays).toFixed(1) : 0}
+Current Streak: ${window.tracker.getCurrentStreak()} days
+
+PERSONAL BESTS
+==============
+Longest Streak: ${window.tracker.personalBests.longestStreak || 0} days
+Most Productive Day: ${window.tracker.personalBests.mostProductiveDay || 0} actions
+Best Week: ${window.tracker.personalBests.bestWeek || 0} actions
+Best Month: ${window.tracker.personalBests.bestMonth || 0} actions
+
+DAILY BREAKDOWN
+===============
+`;
+
+        sortedDates.forEach(dateKey => {
+            const dayData = data[dateKey];
+            const date = new Date(dateKey);
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            const life = dayData.life || 0;
+            const business = dayData.business || 0;
+            const total = life + business;
+            
+            report += `${dayName}: ${total} total (${life} life, ${business} business)\n`;
+        });
+        
+        return report;
+    }
+
+    createEmergencyBackup() {
+        // Create all three backup types at once
+        this.exportAllData();
+        setTimeout(() => this.exportDataAsCSV(), 500);
+        setTimeout(() => this.exportDataAsText(), 1000);
+        
+        window.tracker.showCelebration("🆘 Emergency Backup Complete!", "Three backup files created: JSON, CSV, and Text report!");
+    }
+
+    saveBackupSettings() {
+        const weeklyReminder = document.getElementById('weeklyBackupReminder').checked;
+        const monthlyReminder = document.getElementById('monthlyBackupReminder').checked;
+        
+        const settings = {
+            weeklyReminder,
+            monthlyReminder,
+            lastReminderCheck: new Date().toISOString()
+        };
+        
+        localStorage.setItem('backupSettings', JSON.stringify(settings));
+        
+        if (weeklyReminder || monthlyReminder) {
+            this.scheduleBackupReminders();
+        }
+        
+        window.tracker.showCelebration("⚙️ Settings Saved!", "Backup reminder preferences updated!");
+    }
+
+    scheduleBackupReminders() {
+        // Check for backup reminders on page load and periodically
+        const settings = JSON.parse(localStorage.getItem('backupSettings') || '{}');
+        const lastBackup = localStorage.getItem('lastBackupDate');
+        const now = new Date();
+        
+        if (lastBackup) {
+            const daysSinceBackup = Math.floor((now - new Date(lastBackup)) / (1000 * 60 * 60 * 24));
+            
+            if (settings.weeklyReminder && daysSinceBackup >= 7) {
+                setTimeout(() => {
+                    window.tracker.showCelebration("🔔 Weekly Backup Reminder", "It's been a week since your last backup. Consider exporting your data!");
+                }, 3000);
+            }
+            
+            if (settings.monthlyReminder && daysSinceBackup >= 30) {
+                setTimeout(() => {
+                    window.tracker.showCelebration("📅 Monthly Backup Reminder", "It's been a month since your last backup. Time to create a backup!");
+                }, 5000);
+            }
+        }
+    }
+
+    getDataRange() {
+        const dates = Object.keys(window.tracker.data).sort();
+        if (dates.length === 0) return null;
+        
+        return {
+            firstEntry: dates[0],
+            lastEntry: dates[dates.length - 1],
+            totalDays: dates.length
+        };
+    }
+
+    updateBackupStatus() {
+        const dataCount = Object.keys(window.tracker.data).length;
+        const lastBackup = localStorage.getItem('lastBackupDate');
+        
+        // Update data count
+        const dataCountEl = document.getElementById('dataCountText');
+        if (dataCountEl) {
+            dataCountEl.textContent = `${dataCount} days of data`;
+        }
+        
+        // Update last backup
+        const lastBackupEl = document.getElementById('lastBackupText');
+        if (lastBackupEl) {
+            if (lastBackup) {
+                const backupDate = new Date(lastBackup);
+                const daysSince = Math.floor((new Date() - backupDate) / (1000 * 60 * 60 * 24));
+                lastBackupEl.textContent = `Last Backup: ${daysSince === 0 ? 'Today' : `${daysSince} days ago`}`;
+            } else {
+                lastBackupEl.textContent = 'Last Backup: Never';
+            }
+        }
+        
+        // Update status indicators
+        const localStorageEl = document.getElementById('localStorageStatus');
+        if (localStorageEl) {
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                localStorageEl.innerHTML = '<span class="indicator-icon">✅</span><span class="indicator-text">Local Storage: Active</span>';
+            } catch (e) {
+                localStorageEl.innerHTML = '<span class="indicator-icon">❌</span><span class="indicator-text">Local Storage: Error</span>';
+            }
+        }
+    }
+
+    showClearDataModal() {
+        const confirmation = confirm(
+            "⚠️ WARNING: This will permanently delete all your data!\n\n" +
+            "This includes:\n" +
+            "• All daily action records\n" +
+            "• Your streak progress\n" +
+            "• Goals and achievements\n" +
+            "• Personal bests\n\n" +
+            "Make sure you have exported your data first!\n\n" +
+            "Are you absolutely sure you want to continue?"
+        );
+        
+        if (confirmation) {
+            const doubleConfirmation = confirm(
+                "🚨 FINAL CONFIRMATION\n\n" +
+                "This action cannot be undone!\n\n" +
+                "Type 'DELETE' in the next prompt to confirm."
+            );
+            
+            if (doubleConfirmation) {
+                const typeConfirmation = prompt("Type 'DELETE' to confirm:");
+                if (typeConfirmation === 'DELETE') {
+                    this.clearAllData();
+                } else {
+                    window.tracker.showCelebration("✅ Cancelled", "Your data is safe - deletion cancelled.");
+                }
+            }
+        }
+    }
+
+    clearAllData() {
+        // Clear all localStorage data
+        localStorage.removeItem('actionTrackerData');
+        localStorage.removeItem('actionTrackerGoals');
+        localStorage.removeItem('actionTrackerAchievements');
+        localStorage.removeItem('actionTrackerPersonalBests');
+        localStorage.removeItem('lastBackupDate');
+        
+        // Reinitialize the app
+        location.reload();
+    }
+
+    // File import functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('dataFileInput');
+        if (fileInput) {
+            fileInput.addEventListener('change', handleFileImport);
+        }
+        
+        // Initialize backup status
+        setTimeout(updateBackupStatus, 1000);
+        
+        // Load backup settings
+        loadBackupSettings();
+        
+        // Schedule reminder checks
+        setTimeout(scheduleBackupReminders, 2000);
+    });
+
+    handleFileImport(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                importDataFromFile(e.target.result, file.type);
+            } catch (error) {
+                window.tracker.showCelebration("❌ Import Error", "Could not read the file. Please check the format and try again.");
+            }
+        };
+        
+        reader.readAsText(file);
+    }
+
+    importDataFromFile(content, fileType) {
+        let importedData = {};
+        
+        if (fileType === 'application/json' || content.trim().startsWith('{')) {
+            // JSON import
+            const jsonData = JSON.parse(content);
+            if (jsonData.appData && jsonData.appData.trackerData) {
+                // Full backup format
+                importedData = jsonData.appData.trackerData;
+                if (jsonData.appData.goals) {
+                    window.tracker.goals = { ...window.tracker.goals, ...jsonData.appData.goals };
+                    window.tracker.saveGoals();
+                }
+                if (jsonData.appData.achievements) {
+                    window.tracker.achievements = { ...window.tracker.achievements, ...jsonData.appData.achievements };
+                    window.tracker.saveAchievements();
+                }
+                if (jsonData.appData.personalBests) {
+                    window.tracker.personalBests = { ...window.tracker.personalBests, ...jsonData.appData.personalBests };
+                    window.tracker.savePersonalBests();
+                }
+            } else {
+                // Simple data format
+                importedData = jsonData;
+            }
+        } else if (fileType === 'text/csv' || content.includes(',')) {
+            // CSV import
+            importedData = this.parseCSVData(content);
+        } else {
+            // Try to parse as simple text format
+            importedData = this.parseTextData(content);
+        }
+        
+        // Merge with existing data
+        const existingData = window.tracker.data;
+        const mergedData = { ...existingData, ...importedData };
+        
+        window.tracker.data = mergedData;
+        window.tracker.saveData();
+        
+        // Update all displays
+        window.tracker.loadTodaysData();
+        window.tracker.updateStreakCounter();
+        window.tracker.updateStats();
+        window.tracker.updateCharts();
+        window.tracker.updateGoalProgress();
+        window.tracker.updateReports();
+        window.tracker.updateProgressRings();
+        window.tracker.updateBadges();
+        window.tracker.updatePersonalBests();
+        window.tracker.renderHeatmap();
+        window.tracker.loadQuickTemplates();
+        
+        const importedDays = Object.keys(importedData).length;
+        window.tracker.showCelebration("📥 Import Successful!", `Imported ${importedDays} days of data. Your information has been merged!`);
+        
+        // Clear file input
+        document.getElementById('dataFileInput').value = '';
+    }
+
+    parseCSVData(csvContent) {
+        const lines = csvContent.split('\n');
+        const data = {};
+        
+        // Skip header row
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            
+            const columns = line.split(',');
+            if (columns.length >= 4) {
+                const date = columns[0];
+                const life = parseInt(columns[2]) || 0;
+                const business = parseInt(columns[3]) || 0;
+                
+                if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    data[date] = { life, business };
+                }
+            }
+        }
+        
+        return data;
+    }
+
+    parseTextData(textContent) {
+        const data = {};
+        const lines = textContent.split('\n');
+        
+        for (const line of lines) {
+            // Look for patterns like "2025-05-26: 5 total (3 life, 2 business)"
+            const match = line.match(/(\d{4}-\d{2}-\d{2}).*?(\d+)\s+life.*?(\d+)\s+business/i);
+            if (match) {
+                const date = match[1];
+                const life = parseInt(match[2]) || 0;
+                const business = parseInt(match[3]) || 0;
+                data[date] = { life, business };
+            }
+        }
+        
+        return data;
+    }
+
+    loadBackupSettings() {
+        const settings = JSON.parse(localStorage.getItem('backupSettings') || '{}');
+        
+        const weeklyCheckbox = document.getElementById('weeklyBackupReminder');
+        const monthlyCheckbox = document.getElementById('monthlyBackupReminder');
+        
+        if (weeklyCheckbox) weeklyCheckbox.checked = settings.weeklyReminder || false;
+        if (monthlyCheckbox) monthlyCheckbox.checked = settings.monthlyReminder || false;
+    }
 }
 
 // Global functions for HTML onclick events

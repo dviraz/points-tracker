@@ -1213,59 +1213,341 @@ section h2 {
     font-weight: 500;
 }
 
-/* Mobile Responsiveness for New Features */
+/* Data Backup & Safety Section Styles - Optimized for Vercel */
+.backup-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 2rem;
+    margin: 2rem 0;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.backup-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.backup-info h3, .backup-actions h3 {
+    color: white;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.safety-indicators {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.safety-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.indicator-icon {
+    font-size: 1.2rem;
+}
+
+.indicator-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.backup-recommendations {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.recommendation-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0 0;
+}
+
+.recommendation-list li {
+    padding: 0.3rem 0;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.backup-action-group {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.backup-action-group h4 {
+    margin: 0 0 1rem 0;
+    color: white;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.export-options, .import-options, .emergency-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.backup-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    font-size: 0.9rem;
+    justify-content: flex-start;
+}
+
+.export-btn {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: white;
+}
+
+.export-btn:hover {
+    background: linear-gradient(135deg, #38a169, #2f855a);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(72, 187, 120, 0.3);
+}
+
+.import-btn {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+    color: white;
+}
+
+.import-btn:hover {
+    background: linear-gradient(135deg, #3182ce, #2c5282);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(66, 153, 225, 0.3);
+}
+
+.settings-btn {
+    background: linear-gradient(135deg, #ed8936, #dd6b20);
+    color: white;
+}
+
+.settings-btn:hover {
+    background: linear-gradient(135deg, #dd6b20, #c05621);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(237, 137, 54, 0.3);
+}
+
+.emergency-btn {
+    background: linear-gradient(135deg, #f56565, #e53e3e);
+    color: white;
+}
+
+.emergency-btn:hover {
+    background: linear-gradient(135deg, #e53e3e, #c53030);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(245, 101, 101, 0.3);
+}
+
+.danger-btn {
+    background: linear-gradient(135deg, #fc8181, #f56565);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.danger-btn:hover {
+    background: linear-gradient(135deg, #f56565, #e53e3e);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(245, 101, 101, 0.4);
+}
+
+.btn-icon {
+    font-size: 1.1rem;
+}
+
+.auto-backup-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.backup-setting {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: white;
+}
+
+.backup-setting input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.import-help, .emergency-help {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+}
+
+.emergency-group {
+    border: 2px solid rgba(245, 101, 101, 0.3);
+    background: rgba(245, 101, 101, 0.1);
+}
+
+/* Vercel-Specific Tips Section */
+.vercel-tips-section {
+    background: linear-gradient(135deg, #1a202c, #2d3748);
+    border-radius: 20px;
+    padding: 2rem;
+    margin: 2rem 0;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.vercel-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.vercel-benefit {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.benefit-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.benefit-text h4 {
+    margin: 0 0 0.5rem 0;
+    color: white;
+    font-size: 1rem;
+}
+
+.benefit-text p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+}
+
+.backup-workflow {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+.backup-workflow h3 {
+    color: white;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.workflow-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.workflow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    position: relative;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.step-content h4 {
+    margin: 0 0 0.5rem 0;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.step-content p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+}
+
+/* Mobile Responsiveness for Backup Sections */
 @media (max-width: 768px) {
-    .rings-container {
-        gap: 20px;
+    .backup-container {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
     }
     
-    .progress-ring-svg {
-        width: 100px;
-        height: 100px;
+    .backup-section, .vercel-tips-section {
+        padding: 1.5rem;
+        margin: 1.5rem 0;
     }
     
-    .progress-ring-circle-bg,
-    .progress-ring-circle {
-        r: 40;
-        cx: 50;
-        cy: 50;
-        stroke-dasharray: 251;
-        stroke-dashoffset: 251;
-    }
-    
-    .progress-ring-value {
-        font-size: 1.4rem;
-    }
-    
-    .templates-container {
+    .vercel-info {
         grid-template-columns: 1fr;
     }
     
-    .template-buttons {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .badges-grid {
+    .workflow-steps {
         grid-template-columns: 1fr;
     }
     
-    .bests-container {
-        grid-template-columns: repeat(2, 1fr);
+    .export-options, .import-options, .emergency-actions {
+        gap: 0.75rem;
     }
     
-    .heatmap-grid {
-        grid-template-columns: repeat(26, 10px);
-        gap: 1px;
+    .backup-btn {
+        padding: 1rem;
+        font-size: 0.95rem;
     }
     
-    .heatmap-square,
-    .legend-square {
-        width: 10px;
-        height: 10px;
-    }
-    
-    .insights-container {
-        grid-template-columns: 1fr;
+    .auto-backup-settings {
+        gap: 0.75rem;
     }
 }
 
