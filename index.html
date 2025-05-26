@@ -667,6 +667,83 @@
         </main>
     </div>
 
+    <!-- Celebration Modal -->
+    <div id="celebrationModal" class="modal" style="display: none;">
+        <div class="modal-content celebration-modal">
+            <div class="celebration-header">
+                <h2 id="celebrationTitle">🎉 Celebration!</h2>
+            </div>
+            <div class="celebration-body">
+                <p id="celebrationMessage">Great job!</p>
+            </div>
+            <div class="celebration-footer">
+                <button class="modal-btn" onclick="closeCelebration()">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Day Modal -->
+    <div id="editDayModal" class="modal" style="display: none;">
+        <div class="modal-content edit-modal">
+            <div class="modal-header">
+                <h2>✏️ Edit Day</h2>
+                <span class="close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="edit-date" id="editDate">Loading...</div>
+                
+                <div class="edit-form">
+                    <div class="action-input">
+                        <label for="editLifeActions">
+                            <span class="emoji">🏠</span>
+                            Life Actions
+                        </label>
+                        <div class="input-group">
+                            <input type="number" id="editLifeActions" min="0" max="400" placeholder="0">
+                            <div class="input-controls">
+                                <div class="quick-buttons">
+                                    <button onclick="setEditQuickValue('editLifeActions', 1)">1</button>
+                                    <button onclick="setEditQuickValue('editLifeActions', 3)">3</button>
+                                    <button onclick="setEditQuickValue('editLifeActions', 5)">5</button>
+                                    <button onclick="setEditQuickValue('editLifeActions', 10)">10</button>
+                                </div>
+                                <button class="reset-btn" onclick="resetEditField('editLifeActions')" title="Reset to 0">
+                                    🔄 Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-input">
+                        <label for="editBusinessActions">
+                            <span class="emoji">💼</span>
+                            Business Actions
+                        </label>
+                        <div class="input-group">
+                            <input type="number" id="editBusinessActions" min="0" max="400" placeholder="0">
+                            <div class="input-controls">
+                                <div class="quick-buttons">
+                                    <button onclick="setEditQuickValue('editBusinessActions', 1)">1</button>
+                                    <button onclick="setEditQuickValue('editBusinessActions', 3)">3</button>
+                                    <button onclick="setEditQuickValue('editBusinessActions', 5)">5</button>
+                                    <button onclick="setEditQuickValue('editBusinessActions', 10)">10</button>
+                                </div>
+                                <button class="reset-btn" onclick="resetEditField('editBusinessActions')" title="Reset to 0">
+                                    🔄 Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn save-btn" onclick="saveEditedDay()">💾 Save Changes</button>
+                <button class="modal-btn delete-btn" onclick="deleteDay()">🗑️ Delete Day</button>
+                <button class="modal-btn cancel-btn" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

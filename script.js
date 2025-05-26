@@ -1727,292 +1727,132 @@ DAILY BREAKDOWN
         // Reinitialize the app
         location.reload();
     }
-
-    // File import functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const fileInput = document.getElementById('dataFileInput');
-        if (fileInput) {
-            fileInput.addEventListener('change', handleFileImport);
-        }
-        
-        // Initialize backup status
-        setTimeout(updateBackupStatus, 1000);
-        
-        // Load backup settings
-        loadBackupSettings();
-        
-        // Schedule reminder checks
-        setTimeout(scheduleBackupReminders, 2000);
-    });
-
-    handleFileImport(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                importDataFromFile(e.target.result, file.type);
-            } catch (error) {
-                window.tracker.showCelebration("❌ Import Error", "Could not read the file. Please check the format and try again.");
-            }
-        };
-        
-        reader.readAsText(file);
-    }
-
-    importDataFromFile(content, fileType) {
-        let importedData = {};
-        
-        if (fileType === 'application/json' || content.trim().startsWith('{')) {
-            // JSON import
-            const jsonData = JSON.parse(content);
-            if (jsonData.appData && jsonData.appData.trackerData) {
-                // Full backup format
-                importedData = jsonData.appData.trackerData;
-                if (jsonData.appData.goals) {
-                    window.tracker.goals = { ...window.tracker.goals, ...jsonData.appData.goals };
-                    window.tracker.saveGoals();
-                }
-                if (jsonData.appData.achievements) {
-                    window.tracker.achievements = { ...window.tracker.achievements, ...jsonData.appData.achievements };
-                    window.tracker.saveAchievements();
-                }
-                if (jsonData.appData.personalBests) {
-                    window.tracker.personalBests = { ...window.tracker.personalBests, ...jsonData.appData.personalBests };
-                    window.tracker.savePersonalBests();
-                }
-            } else {
-                // Simple data format
-                importedData = jsonData;
-            }
-        } else if (fileType === 'text/csv' || content.includes(',')) {
-            // CSV import
-            importedData = this.parseCSVData(content);
-        } else {
-            // Try to parse as simple text format
-            importedData = this.parseTextData(content);
-        }
-        
-        // Merge with existing data
-        const existingData = window.tracker.data;
-        const mergedData = { ...existingData, ...importedData };
-        
-        window.tracker.data = mergedData;
-        window.tracker.saveData();
-        
-        // Update all displays
-        window.tracker.loadTodaysData();
-        window.tracker.updateStreakCounter();
-        window.tracker.updateStats();
-        window.tracker.updateCharts();
-        window.tracker.updateGoalProgress();
-        window.tracker.updateReports();
-        window.tracker.updateProgressRings();
-        window.tracker.updateBadges();
-        window.tracker.updatePersonalBests();
-        window.tracker.renderHeatmap();
-        window.tracker.loadQuickTemplates();
-        
-        const importedDays = Object.keys(importedData).length;
-        window.tracker.showCelebration("📥 Import Successful!", `Imported ${importedDays} days of data. Your information has been merged!`);
-        
-        // Clear file input
-        document.getElementById('dataFileInput').value = '';
-    }
-
-    parseCSVData(csvContent) {
-        const lines = csvContent.split('\n');
-        const data = {};
-        
-        // Skip header row
-        for (let i = 1; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-            
-            const columns = line.split(',');
-            if (columns.length >= 4) {
-                const date = columns[0];
-                const life = parseInt(columns[2]) || 0;
-                const business = parseInt(columns[3]) || 0;
-                
-                if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                    data[date] = { life, business };
-                }
-            }
-        }
-        
-        return data;
-    }
-
-    parseTextData(textContent) {
-        const data = {};
-        const lines = textContent.split('\n');
-        
-        for (const line of lines) {
-            // Look for patterns like "2025-05-26: 5 total (3 life, 2 business)"
-            const match = line.match(/(\d{4}-\d{2}-\d{2}).*?(\d+)\s+life.*?(\d+)\s+business/i);
-            if (match) {
-                const date = match[1];
-                const life = parseInt(match[2]) || 0;
-                const business = parseInt(match[3]) || 0;
-                data[date] = { life, business };
-            }
-        }
-        
-        return data;
-    }
-
-    loadBackupSettings() {
-        const settings = JSON.parse(localStorage.getItem('backupSettings') || '{}');
-        
-        const weeklyCheckbox = document.getElementById('weeklyBackupReminder');
-        const monthlyCheckbox = document.getElementById('monthlyBackupReminder');
-        
-        if (weeklyCheckbox) weeklyCheckbox.checked = settings.weeklyReminder || false;
-        if (monthlyCheckbox) monthlyCheckbox.checked = settings.monthlyReminder || false;
-    }
 }
 
 // Global functions for HTML onclick events
-function setQuickValue(fieldId, value) {
-    const field = document.getElementById(fieldId);
-    if (field) {
-        const currentValue = parseInt(field.value) || 0;
-        const newValue = currentValue + value;
-        field.value = newValue;
-        field.focus();
-        
-        // Add visual feedback
-        field.style.transform = 'scale(1.1)';
-        field.style.borderColor = '#48bb78';
-        field.style.boxShadow = '0 0 15px rgba(72, 187, 120, 0.5)';
-        
-        setTimeout(() => {
-            field.style.transform = 'scale(1)';
-            field.style.borderColor = '#e2e8f0';
-            field.style.boxShadow = 'none';
-        }, 300);
-    }
-}
+let tracker;
 
 function saveEntry() {
-    if (window.tracker) {
-        tracker.saveEntry();
-    }
-}
-
-function closeCelebration() {
-    if (window.tracker) {
-        tracker.closeCelebration();
-    }
-}
-
-function resetField(fieldId) {
-    if (window.tracker) {
-        tracker.resetField(fieldId);
-    }
+    if (tracker) tracker.saveEntry();
 }
 
 function updateGoals() {
-    if (window.tracker) {
-        tracker.updateGoals();
+    if (tracker) tracker.updateGoals();
+}
+
+function resetField(fieldId) {
+    if (tracker) tracker.resetField(fieldId);
+}
+
+function setQuickValue(fieldId, value) {
+    const field = document.getElementById(fieldId);
+    if (field) {
+        field.value = value;
+        field.focus();
     }
 }
 
-// Global functions for edit modal interactions
 function setEditQuickValue(fieldId, value) {
     const field = document.getElementById(fieldId);
     if (field) {
-        const currentValue = parseInt(field.value) || 0;
-        const newValue = currentValue + value;
-        field.value = newValue;
+        field.value = value;
         field.focus();
-        
-        // Add visual feedback
-        field.style.transform = 'scale(1.1)';
-        field.style.borderColor = '#48bb78';
-        field.style.boxShadow = '0 0 15px rgba(72, 187, 120, 0.5)';
-        
-        setTimeout(() => {
-            field.style.transform = 'scale(1)';
-            field.style.borderColor = '#e2e8f0';
-            field.style.boxShadow = 'none';
-        }, 300);
-    }
-}
-
-function saveEditedDay() {
-    if (window.tracker) {
-        tracker.saveEditedDay();
-    }
-}
-
-function closeEditModal() {
-    if (window.tracker) {
-        tracker.closeEditModal();
-    }
-}
-
-function deleteDay() {
-    if (window.tracker) {
-        tracker.deleteDay();
     }
 }
 
 function resetEditField(fieldId) {
-    if (window.tracker) {
-        tracker.resetEditField(fieldId);
-    }
+    if (tracker) tracker.resetEditField(fieldId);
 }
 
-// Initialize the app when the page loads
-let tracker;
+function saveEditedDay() {
+    if (tracker) tracker.saveEditedDay();
+}
+
+function deleteDay() {
+    if (tracker) tracker.deleteDay();
+}
+
+function closeEditModal() {
+    if (tracker) tracker.closeEditModal();
+}
+
+function closeCelebration() {
+    if (tracker) tracker.closeCelebration();
+}
+
+// Backup functions
+function exportAllData() {
+    if (tracker) tracker.exportAllData();
+}
+
+function exportDataAsCSV() {
+    if (tracker) tracker.exportDataAsCSV();
+}
+
+function exportDataAsText() {
+    if (tracker) tracker.exportDataAsText();
+}
+
+function createEmergencyBackup() {
+    if (tracker) tracker.createEmergencyBackup();
+}
+
+function saveBackupSettings() {
+    if (tracker) tracker.saveBackupSettings();
+}
+
+function showClearDataModal() {
+    if (tracker) tracker.showClearDataModal();
+}
+
+// File import handling
+function handleFileImport(event) {
+    if (!tracker) return;
+    
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            tracker.importDataFromFile(e.target.result, file.type);
+        } catch (error) {
+            tracker.showCelebration("❌ Import Error", "Could not read the file. Please check the format and try again.");
+        }
+    };
+    
+    reader.readAsText(file);
+}
+
+function updateBackupStatus() {
+    if (tracker) tracker.updateBackupStatus();
+}
+
+function loadBackupSettings() {
+    if (tracker) tracker.loadBackupSettings();
+}
+
+function scheduleBackupReminders() {
+    if (tracker) tracker.scheduleBackupReminders();
+}
+
+// Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     tracker = new ActionTracker();
     window.tracker = tracker; // Make it globally accessible
     
-    // Add keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        // Ctrl/Cmd + S to save
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-            e.preventDefault();
-            tracker.saveEntry();
-        }
-        
-        // Escape to close modal
-        if (e.key === 'Escape') {
-            const editModal = document.getElementById('editDayModal');
-            if (editModal && editModal.style.display === 'block') {
-                tracker.closeEditModal();
-            } else {
-                tracker.closeCelebration();
-            }
-        }
-    });
+    // Set up file input handler
+    const fileInput = document.getElementById('dataFileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileImport);
+    }
     
-    // Auto-save when inputs change (for ADHD-friendly experience)
-    let autoSaveTimeout;
-    const inputs = document.querySelectorAll('#lifeActions, #businessActions');
-    inputs.forEach(input => {
-        input.addEventListener('input', function() {
-            clearTimeout(autoSaveTimeout);
-            autoSaveTimeout = setTimeout(() => {
-                if (input.value && input.value !== '0') {
-                    // Visual hint that data will be saved
-                    input.style.borderColor = '#48bb78';
-                    setTimeout(() => {
-                        input.style.borderColor = '#e2e8f0';
-                    }, 1000);
-                }
-            }, 2000);
-        });
-    });
+    // Initialize backup status
+    setTimeout(() => {
+        if (tracker) {
+            tracker.updateBackupStatus();
+            tracker.loadBackupSettings();
+            tracker.scheduleBackupReminders();
+        }
+    }, 1000);
 });
-
-// Service Worker registration for offline support (optional)
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        // You can add a service worker later for offline functionality
-    });
-}
